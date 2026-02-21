@@ -149,13 +149,15 @@
     </div>
 
     <script>
-        // 全局錯誤捕捉 (如果程式死機，會強制跳警告)
+        // 捕捉嚴重錯誤並彈出警告，讓你馬上知道哪裡有問題
         window.onerror = function(msg, url, line) {
-            alert("網頁發生嚴重錯誤：" + msg + "\n(請檢查網路或 F12 Console)");
+            alert("網頁發生錯誤：" + msg + "\n(請檢查網路或 F12 Console)");
         };
 
+        // 直接幫你把你的金鑰寫好了，請不要改動這兩行！
         const SUPABASE_URL = 'https://fugdnxzywuypxfsetsmo.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1Z2RueHp5d3V5cHhmc2V0c21vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3MDI1NTMsImV4cCI6MjA4NzI3ODU1M30.L6ON4ZcBM_3eqbQve4S8BJBpyzfAH4KtHw6EfgtCoF8';
+        
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUser = null;
@@ -190,7 +192,7 @@
         async function showApp() {
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
-            document.getElementById('userGreeting').textContent = `帳號：${currentUser.email}`;
+            document.getElementById('userGreeting').textContent = `登入帳號：${currentUser.email}`;
             await loadCloudHistory();
         }
 
@@ -207,9 +209,6 @@
             }
         });
 
-        // ==========================================
-        // 🚨 改良版的註冊與登入 (強制 Alert 顯示錯誤)
-        // ==========================================
         document.getElementById('btnRegister').addEventListener('click', async () => {
             const email = document.getElementById('emailInput').value.trim();
             const password = document.getElementById('passwordInput').value;
@@ -235,7 +234,7 @@
                     alert("🎉 註冊成功！系統已為您登入。");
                 }
             } catch (err) {
-                alert("發生網路或系統異常：" + err.message);
+                alert("發生異常：" + err.message);
             } finally {
                 btn.textContent = "註冊";
                 btn.disabled = false;
@@ -261,7 +260,7 @@
                     alert("登入失敗：" + error.message);
                 }
             } catch (err) {
-                alert("發生網路或系統異常：" + err.message);
+                alert("發生異常：" + err.message);
             } finally {
                 btn.textContent = "登入";
                 btn.disabled = false;
