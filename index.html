@@ -8,7 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif;
+        }
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
@@ -113,7 +114,7 @@
                                 <option value="g">公克 (g)</option><option value="kg">公斤 (kg)</option>
                                 <option value="ml">毫升 (ml)</option><option value="L">公升 (L)</option>
                                 <option value="pcs">件/抽 (pcs)</option>
-                            </select>
+                             </select>
                         </div>
                     </div>
                     <div>
@@ -166,14 +167,13 @@
         // ==========================================
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
         let currentUser = null;
         let userHistory = [];
         let currentAnalyzedItem = null;
-        let isRecoveringPassword = false; // 追蹤是否在重設密碼流程中
+        let isRecoveringPassword = false;
+        // 追蹤是否在重設密碼流程中
 
         document.getElementById('itemDate').valueAsDate = new Date();
-
         // ------------------------------------------
         // 面板切換與驗證邏輯
         // ------------------------------------------
@@ -227,28 +227,49 @@
         // 登入、註冊、登出 按鈕
         // ------------------------------------------
         document.getElementById('btnLogin').addEventListener('click', async () => {
+            const form = document.getElementById('authForm');
+            // 檢查是否填寫完整
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
             const errorDiv = document.getElementById('authError');
+            const btn = document.getElementById('btnLogin');
             
+            btn.textContent = "登入中...";
             const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
                 errorDiv.textContent = '登入失敗：' + error.message;
                 errorDiv.classList.remove('hidden');
+                btn.textContent = "登入";
             }
         });
 
         document.getElementById('btnRegister').addEventListener('click', async () => {
+            const form = document.getElementById('authForm');
+            // 檢查密碼是否滿6碼、信箱格式是否正確
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
             const errorDiv = document.getElementById('authError');
+            const btn = document.getElementById('btnRegister');
             
+            btn.textContent = "處理中...";
             const { error } = await supabase.auth.signUp({ email, password });
             if (error) {
                 errorDiv.textContent = '註冊失敗：' + error.message;
                 errorDiv.classList.remove('hidden');
+                btn.textContent = "註冊";
             } else {
                 alert('註冊成功！為您自動登入。');
+                btn.textContent = "註冊";
             }
         });
 
@@ -342,7 +363,6 @@
         async function loadCloudHistory() {
             document.getElementById('emptyState').innerHTML = '<p class="text-slate-500">正在從雲端同步您的資料...</p>';
             const { data, error } = await supabase.from('purchases').select('*').order('created_at', { ascending: false });
-            
             if (error) {
                 console.error(error);
                 document.getElementById('emptyState').innerHTML = '<p class="text-red-500">讀取失敗，請重新整理頁面。</p>';
@@ -396,7 +416,6 @@
             const relevantHistory = userHistory.filter(h => 
                 h.name === currentItem.name && h.brand === currentItem.brand && h.std_unit === currentItem.std_unit && h.currency === currentItem.currency
             );
-
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('resultsArea').classList.remove('hidden');
             document.getElementById('resNameBrand').textContent = `${currentItem.brand} ${currentItem.name}`;
@@ -404,7 +423,6 @@
 
             const reportContent = document.getElementById('reportContent');
             const reportCard = document.getElementById('reportCard');
-
             if (relevantHistory.length === 0) {
                 reportCard.className = "glass-panel rounded-2xl shadow-xl p-6 border-l-4 border-slate-400";
                 reportContent.innerHTML = `<p>這是您第一次記錄此商品。建議直接購買並存檔，下次就能比價！</p>`;
@@ -442,7 +460,6 @@
                 btn.classList.replace('bg-blue-600', 'bg-green-600');
             }
         });
-
         document.getElementById('btnNew').addEventListener('click', function() {
             document.getElementById('priceForm').reset();
             document.getElementById('itemDate').valueAsDate = new Date();
@@ -454,7 +471,6 @@
             btnSave.textContent = "加入雲端紀錄";
             btnSave.classList.replace('bg-green-600', 'bg-blue-600');
         });
-
     </script>
 </body>
 </html>
