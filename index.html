@@ -20,27 +20,64 @@
 <body class="bg-gradient-to-br from-slate-100 to-blue-50 min-h-screen text-slate-800 p-4 md:p-8">
 
     <div id="loginScreen" class="max-w-md mx-auto mt-20 glass-panel rounded-2xl shadow-xl p-8">
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-bold text-slate-900 mb-2">Price Tracker</h1>
-            <p class="text-slate-500">登入或註冊您的專屬雲端比價庫</p>
-        </div>
         
-        <form id="authForm" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-600 mb-1">電子信箱</label>
-                <input type="email" id="emailInput" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+        <div id="authSection">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-bold text-slate-900 mb-2">Price Tracker</h1>
+                <p class="text-slate-500">登入或註冊您的專屬雲端比價庫</p>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-600 mb-1">密碼 (至少 6 碼)</label>
-                <input type="password" id="passwordInput" required minlength="6" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            <form id="authForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">電子信箱</label>
+                    <input type="email" id="emailInput" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">密碼 (至少 6 碼)</label>
+                    <input type="password" id="passwordInput" required minlength="6" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="text-right mt-1">
+                    <button type="button" id="btnShowForgot" class="text-sm text-blue-600 hover:text-blue-800 transition-colors">忘記密碼？</button>
+                </div>
+                
+                <div id="authError" class="text-red-500 text-sm hidden"></div>
+                
+                <div class="flex gap-3 pt-2">
+                    <button type="button" id="btnLogin" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-lg transition-colors shadow-sm">登入</button>
+                    <button type="button" id="btnRegister" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-colors shadow-sm">註冊</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="forgotSection" class="hidden">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">重設密碼</h2>
+                <p class="text-sm text-slate-500">請輸入註冊信箱，我們將發送重設連結。</p>
             </div>
-            <div id="authError" class="text-red-500 text-sm hidden"></div>
-            
-            <div class="flex gap-3 pt-2">
-                <button type="button" id="btnLogin" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-lg transition-colors">登入</button>
-                <button type="button" id="btnRegister" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-colors">註冊</button>
+            <form class="space-y-4">
+                <div>
+                    <input type="email" id="forgotEmailInput" required placeholder="您的電子信箱" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div id="forgotMsg" class="text-sm hidden"></div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" id="btnBackToLogin" class="flex-1 border border-slate-300 text-slate-700 hover:bg-slate-50 py-2.5 rounded-lg transition-colors">返回</button>
+                    <button type="button" id="btnSendReset" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-colors shadow-sm">發送連結</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="updatePwdSection" class="hidden">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">設定新密碼</h2>
+                <p class="text-sm text-slate-500">歡迎回來！請輸入您的新密碼。</p>
             </div>
-        </form>
+            <form class="space-y-4">
+                <div>
+                    <input type="password" id="newPasswordInput" required minlength="6" placeholder="新密碼 (至少 6 碼)" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div id="updateMsg" class="text-sm hidden"></div>
+                <button type="button" id="btnUpdatePwd" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-colors shadow-sm">確認修改並登入</button>
+            </form>
+        </div>
     </div>
 
     <div id="appScreen" class="max-w-6xl mx-auto hidden">
@@ -133,60 +170,33 @@
         let currentUser = null;
         let userHistory = [];
         let currentAnalyzedItem = null;
+        let isRecoveringPassword = false; // 追蹤是否在重設密碼流程中
 
         document.getElementById('itemDate').valueAsDate = new Date();
 
-        // 檢查登入狀態
-        async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                currentUser = session.user;
-                showApp();
-            } else {
-                showLogin();
-            }
-        }
-
-        // 登入功能
-        document.getElementById('btnLogin').addEventListener('click', async () => {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
-            const errorDiv = document.getElementById('authError');
-            
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                errorDiv.textContent = '登入失敗：' + error.message;
-                errorDiv.classList.remove('hidden');
-            } else {
-                checkSession();
-            }
-        });
-
-        // 註冊功能
-        document.getElementById('btnRegister').addEventListener('click', async () => {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
-            const errorDiv = document.getElementById('authError');
-            
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) {
-                errorDiv.textContent = '註冊失敗：' + error.message;
-                errorDiv.classList.remove('hidden');
-            } else {
-                alert('註冊成功！為您自動登入。');
-                checkSession();
-            }
-        });
-
-        // 登出功能
-        document.getElementById('btnLogout').addEventListener('click', async () => {
-            await supabase.auth.signOut();
-            checkSession();
-        });
-
-        function showLogin() {
+        // ------------------------------------------
+        // 面板切換與驗證邏輯
+        // ------------------------------------------
+        function showAuthSection() {
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('appScreen').classList.add('hidden');
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('forgotSection').classList.add('hidden');
+            document.getElementById('updatePwdSection').classList.add('hidden');
+        }
+
+        function showForgotSection() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('forgotSection').classList.remove('hidden');
+            document.getElementById('updatePwdSection').classList.add('hidden');
+        }
+
+        function showUpdatePwdSection() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('appScreen').classList.add('hidden');
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('forgotSection').classList.add('hidden');
+            document.getElementById('updatePwdSection').classList.remove('hidden');
         }
 
         async function showApp() {
@@ -196,7 +206,139 @@
             await loadCloudHistory();
         }
 
-        // 讀取資料庫
+        // 監聽所有身分驗證事件 (包含登入、登出、以及密碼重設)
+        supabase.auth.onAuthStateChanged(async (event, session) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                // 當使用者點擊 Email 裡的重設連結時，Supabase 會觸發這個事件
+                isRecoveringPassword = true;
+                showUpdatePwdSection();
+            } else if (session && !isRecoveringPassword) {
+                // 正常登入
+                currentUser = session.user;
+                showApp();
+            } else if (!session) {
+                // 尚未登入
+                currentUser = null;
+                showAuthSection();
+            }
+        });
+
+        // ------------------------------------------
+        // 登入、註冊、登出 按鈕
+        // ------------------------------------------
+        document.getElementById('btnLogin').addEventListener('click', async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('authError');
+            
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                errorDiv.textContent = '登入失敗：' + error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('btnRegister').addEventListener('click', async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('authError');
+            
+            const { error } = await supabase.auth.signUp({ email, password });
+            if (error) {
+                errorDiv.textContent = '註冊失敗：' + error.message;
+                errorDiv.classList.remove('hidden');
+            } else {
+                alert('註冊成功！為您自動登入。');
+            }
+        });
+
+        document.getElementById('btnLogout').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+        });
+
+        // ------------------------------------------
+        // 忘記密碼 / 重設密碼邏輯
+        // ------------------------------------------
+        document.getElementById('btnShowForgot').addEventListener('click', showForgotSection);
+        document.getElementById('btnBackToLogin').addEventListener('click', showAuthSection);
+
+        // 步驟 1: 發送重設信件
+        document.getElementById('btnSendReset').addEventListener('click', async () => {
+            const email = document.getElementById('forgotEmailInput').value;
+            const msgDiv = document.getElementById('forgotMsg');
+            const btn = document.getElementById('btnSendReset');
+            
+            if (!email) {
+                msgDiv.className = "text-sm text-red-500 mt-2";
+                msgDiv.textContent = "請輸入電子信箱";
+                msgDiv.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "發送中...";
+
+            // 使用目前的網址作為回傳點，確保回到你的 GitHub Pages
+            const redirectUrl = window.location.origin + window.location.pathname;
+
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: redirectUrl,
+            });
+
+            msgDiv.classList.remove('hidden');
+            if (error) {
+                msgDiv.className = "text-sm text-red-500 mt-2";
+                msgDiv.textContent = "發送失敗：" + error.message;
+            } else {
+                msgDiv.className = "text-sm text-green-600 font-medium mt-2";
+                msgDiv.textContent = "✅ 重設信件已發送！請去信箱點擊連結。";
+            }
+            
+            btn.disabled = false;
+            btn.textContent = "發送連結";
+        });
+
+        // 步驟 2: 設定新密碼並登入
+        document.getElementById('btnUpdatePwd').addEventListener('click', async () => {
+            const newPassword = document.getElementById('newPasswordInput').value;
+            const msgDiv = document.getElementById('updateMsg');
+            const btn = document.getElementById('btnUpdatePwd');
+            
+            if (newPassword.length < 6) {
+                msgDiv.className = "text-sm text-red-500 mt-2";
+                msgDiv.textContent = "密碼至少需要 6 碼";
+                msgDiv.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "更新中...";
+
+            // 更新密碼
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword
+            });
+
+            msgDiv.classList.remove('hidden');
+            if (error) {
+                msgDiv.className = "text-sm text-red-500 mt-2";
+                msgDiv.textContent = "更新失敗：" + error.message;
+                btn.disabled = false;
+                btn.textContent = "確認修改並登入";
+            } else {
+                msgDiv.className = "text-sm text-green-600 font-medium mt-2";
+                msgDiv.textContent = "✅ 密碼修改成功！正在進入系統...";
+                isRecoveringPassword = false; // 解除密碼重設狀態
+                
+                setTimeout(() => {
+                    showApp();
+                }, 1500);
+            }
+        });
+
+        // ------------------------------------------
+        // App 核心邏輯 (讀取/分析/儲存)
+        // ------------------------------------------
         async function loadCloudHistory() {
             document.getElementById('emptyState').innerHTML = '<p class="text-slate-500">正在從雲端同步您的資料...</p>';
             const { data, error } = await supabase.from('purchases').select('*').order('created_at', { ascending: false });
@@ -226,7 +368,6 @@
             return { sQty, sUnit, unitPrice: parseFloat((price / sQty).toFixed(4)) };
         }
 
-        // 提交表單並分析
         document.getElementById('priceForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const stdData = getStandardizedData(
@@ -235,7 +376,6 @@
                 document.getElementById('itemPrice').value
             );
             
-            // 注意：這裡的 key 要跟 SQL 資料庫的欄位名稱一模一樣 (使用底線)
             currentAnalyzedItem = {
                 user_id: currentUser.id,
                 name: document.getElementById('itemName').value.trim(),
@@ -282,7 +422,6 @@
             }
         }
 
-        // 寫入 Supabase 資料庫
         document.getElementById('btnSave').addEventListener('click', async function() {
             if (!currentAnalyzedItem) return;
             const btn = this;
@@ -297,7 +436,7 @@
                 btn.disabled = false;
                 btn.textContent = "加入雲端紀錄";
             } else {
-                userHistory.push(data[0]);
+                userHistory.unshift(data[0]); // 加到陣列最前面
                 populateDatalists();
                 btn.textContent = "已存入雲端！";
                 btn.classList.replace('bg-blue-600', 'bg-green-600');
@@ -316,8 +455,6 @@
             btnSave.classList.replace('bg-green-600', 'bg-blue-600');
         });
 
-        // 網頁載入時啟動
-        checkSession();
     </script>
 </body>
 </html>
