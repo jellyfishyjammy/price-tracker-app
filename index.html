@@ -8,8 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Inter', sans-serif;
-        }
+        body { font-family: 'Inter', sans-serif; }
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
@@ -40,8 +39,6 @@
                     <button type="button" id="btnShowForgot" class="text-sm text-blue-600 hover:text-blue-800 transition-colors">忘記密碼？</button>
                 </div>
                 
-                <div id="authError" class="text-red-500 text-sm hidden"></div>
-                
                 <div class="flex gap-3 pt-2">
                     <button type="button" id="btnLogin" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-lg transition-colors shadow-sm">登入</button>
                     <button type="button" id="btnRegister" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-colors shadow-sm">註冊</button>
@@ -58,7 +55,6 @@
                 <div>
                     <input type="email" id="forgotEmailInput" required placeholder="您的電子信箱" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
-                <div id="forgotMsg" class="text-sm hidden"></div>
                 <div class="flex gap-3 pt-2">
                     <button type="button" id="btnBackToLogin" class="flex-1 border border-slate-300 text-slate-700 hover:bg-slate-50 py-2.5 rounded-lg transition-colors">返回</button>
                     <button type="button" id="btnSendReset" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-colors shadow-sm">發送連結</button>
@@ -75,7 +71,6 @@
                 <div>
                     <input type="password" id="newPasswordInput" required minlength="6" placeholder="新密碼 (至少 6 碼)" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
-                <div id="updateMsg" class="text-sm hidden"></div>
                 <button type="button" id="btnUpdatePwd" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-colors shadow-sm">確認修改並登入</button>
             </form>
         </div>
@@ -98,18 +93,18 @@
                 <form id="priceForm" class="space-y-5">
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">商品名稱</label>
-                        <input list="nameList" id="itemName" required placeholder="例如：鮮乳、衛生紙..." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input list="nameList" id="itemName" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
                         <datalist id="nameList"></datalist>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">品牌</label>
-                        <input list="brandList" id="itemBrand" required placeholder="例如：瑞穗、舒潔..." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input list="brandList" id="itemBrand" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
                         <datalist id="brandList"></datalist>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">規格 (容量/重量/數量)</label>
                         <div class="flex gap-2">
-                            <input type="number" id="itemQty" step="0.01" required placeholder="數值" class="w-2/3 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="number" id="itemQty" step="0.01" required class="w-2/3 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
                             <select id="itemUnit" class="w-1/3 px-4 py-2.5 rounded-lg border border-slate-300 bg-white outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="g">公克 (g)</option><option value="kg">公斤 (kg)</option>
                                 <option value="ml">毫升 (ml)</option><option value="L">公升 (L)</option>
@@ -120,7 +115,7 @@
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">購買價格</label>
                         <div class="flex gap-2">
-                            <input type="number" id="itemPrice" step="0.01" required placeholder="總價" class="w-2/3 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="number" id="itemPrice" step="0.01" required class="w-2/3 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
                             <select id="itemCurrency" class="w-1/3 px-4 py-2.5 rounded-lg border border-slate-300 bg-white outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="TWD">台幣 (TWD)</option><option value="USD">美金 (USD)</option><option value="JPY">日幣 (JPY)</option>
                             </select>
@@ -138,15 +133,9 @@
 
             <div class="lg:col-span-7 flex flex-col gap-6">
                 <div id="emptyState" class="glass-panel rounded-2xl p-10 flex flex-col items-center justify-center text-center h-full border-dashed border-2 border-slate-300">
-                    <p class="text-slate-500 text-lg">載入完成。請在左側輸入商品進行分析。</p>
+                    <p class="text-slate-500 text-lg">請在左側輸入商品進行分析。</p>
                 </div>
-
                 <div id="resultsArea" class="hidden flex flex-col gap-6">
-                    <div class="glass-panel rounded-2xl shadow-xl p-6">
-                        <h3 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-2">本次單價分析</h3>
-                        <p id="resNameBrand" class="text-xl font-semibold text-slate-800"></p>
-                        <p id="resUnitPrice" class="text-3xl font-bold text-slate-900 mt-2"></p>
-                    </div>
                     <div class="glass-panel rounded-2xl shadow-xl p-6 border-l-4" id="reportCard">
                         <div id="reportContent" class="space-y-4 text-slate-700"></div>
                     </div>
@@ -160,23 +149,22 @@
     </div>
 
     <script>
-        // ==========================================
-        // ⚠️⚠️⚠️ 貼上你在 Supabase 後台拿到的 URL 和 API Key ⚠️⚠️⚠️
+        // 全局錯誤捕捉 (如果程式死機，會強制跳警告)
+        window.onerror = function(msg, url, line) {
+            alert("網頁發生嚴重錯誤：" + msg + "\n(請檢查網路或 F12 Console)");
+        };
+
         const SUPABASE_URL = 'https://fugdnxzywuypxfsetsmo.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1Z2RueHp5d3V5cHhmc2V0c21vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3MDI1NTMsImV4cCI6MjA4NzI3ODU1M30.L6ON4ZcBM_3eqbQve4S8BJBpyzfAH4KtHw6EfgtCoF8';
-        // ==========================================
-
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         let currentUser = null;
         let userHistory = [];
         let currentAnalyzedItem = null;
         let isRecoveringPassword = false;
-        // 追蹤是否在重設密碼流程中
 
         document.getElementById('itemDate').valueAsDate = new Date();
-        // ------------------------------------------
-        // 面板切換與驗證邏輯
-        // ------------------------------------------
+
         function showAuthSection() {
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('appScreen').classList.add('hidden');
@@ -202,74 +190,81 @@
         async function showApp() {
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
-            document.getElementById('userGreeting').textContent = `登入帳號：${currentUser.email}`;
+            document.getElementById('userGreeting').textContent = `帳號：${currentUser.email}`;
             await loadCloudHistory();
         }
 
-        // 監聽所有身分驗證事件 (包含登入、登出、以及密碼重設)
         supabase.auth.onAuthStateChanged(async (event, session) => {
             if (event === 'PASSWORD_RECOVERY') {
-                // 當使用者點擊 Email 裡的重設連結時，Supabase 會觸發這個事件
                 isRecoveringPassword = true;
                 showUpdatePwdSection();
             } else if (session && !isRecoveringPassword) {
-                // 正常登入
                 currentUser = session.user;
                 showApp();
             } else if (!session) {
-                // 尚未登入
                 currentUser = null;
                 showAuthSection();
             }
         });
 
-        // ------------------------------------------
-        // 登入、註冊、登出 按鈕
-        // ------------------------------------------
-        document.getElementById('btnLogin').addEventListener('click', async () => {
-            const form = document.getElementById('authForm');
-            // 檢查是否填寫完整
-            if (!form.checkValidity()) {
-                form.reportValidity();
+        // ==========================================
+        // 🚨 改良版的註冊與登入 (強制 Alert 顯示錯誤)
+        // ==========================================
+        document.getElementById('btnRegister').addEventListener('click', async () => {
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+
+            if (!email || !email.includes('@')) {
+                alert("❌ 請輸入正確的電子信箱！");
+                return;
+            }
+            if (password.length < 6) {
+                alert("❌ 密碼太短，請至少輸入 6 個字元！");
                 return;
             }
 
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
-            const errorDiv = document.getElementById('authError');
-            const btn = document.getElementById('btnLogin');
-            
-            btn.textContent = "登入中...";
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                errorDiv.textContent = '登入失敗：' + error.message;
-                errorDiv.classList.remove('hidden');
-                btn.textContent = "登入";
+            const btn = document.getElementById('btnRegister');
+            btn.textContent = "處理中...";
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                if (error) {
+                    alert("註冊失敗：" + error.message);
+                } else {
+                    alert("🎉 註冊成功！系統已為您登入。");
+                }
+            } catch (err) {
+                alert("發生網路或系統異常：" + err.message);
+            } finally {
+                btn.textContent = "註冊";
+                btn.disabled = false;
             }
         });
 
-        document.getElementById('btnRegister').addEventListener('click', async () => {
-            const form = document.getElementById('authForm');
-            // 檢查密碼是否滿6碼、信箱格式是否正確
-            if (!form.checkValidity()) {
-                form.reportValidity();
+        document.getElementById('btnLogin').addEventListener('click', async () => {
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+
+            if (!email || !password) {
+                alert("❌ 請完整輸入信箱與密碼！");
                 return;
             }
 
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
-            const errorDiv = document.getElementById('authError');
-            const btn = document.getElementById('btnRegister');
-            
-            btn.textContent = "處理中...";
-            const { error } = await supabase.auth.signUp({ email, password });
-            if (error) {
-                errorDiv.textContent = '註冊失敗：' + error.message;
-                errorDiv.classList.remove('hidden');
-                btn.textContent = "註冊";
-            } else {
-                alert('註冊成功！為您自動登入。');
-                btn.textContent = "註冊";
+            const btn = document.getElementById('btnLogin');
+            btn.textContent = "登入中...";
+            btn.disabled = true;
+
+            try {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) {
+                    alert("登入失敗：" + error.message);
+                }
+            } catch (err) {
+                alert("發生網路或系統異常：" + err.message);
+            } finally {
+                btn.textContent = "登入";
+                btn.disabled = false;
             }
         });
 
@@ -277,100 +272,60 @@
             await supabase.auth.signOut();
         });
 
-        // ------------------------------------------
-        // 忘記密碼 / 重設密碼邏輯
-        // ------------------------------------------
         document.getElementById('btnShowForgot').addEventListener('click', showForgotSection);
         document.getElementById('btnBackToLogin').addEventListener('click', showAuthSection);
 
-        // 步驟 1: 發送重設信件
         document.getElementById('btnSendReset').addEventListener('click', async () => {
             const email = document.getElementById('forgotEmailInput').value;
-            const msgDiv = document.getElementById('forgotMsg');
-            const btn = document.getElementById('btnSendReset');
-            
             if (!email) {
-                msgDiv.className = "text-sm text-red-500 mt-2";
-                msgDiv.textContent = "請輸入電子信箱";
-                msgDiv.classList.remove('hidden');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = "發送中...";
-
-            // 使用目前的網址作為回傳點，確保回到你的 GitHub Pages
-            const redirectUrl = window.location.origin + window.location.pathname;
-
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: redirectUrl,
-            });
-
-            msgDiv.classList.remove('hidden');
-            if (error) {
-                msgDiv.className = "text-sm text-red-500 mt-2";
-                msgDiv.textContent = "發送失敗：" + error.message;
-            } else {
-                msgDiv.className = "text-sm text-green-600 font-medium mt-2";
-                msgDiv.textContent = "✅ 重設信件已發送！請去信箱點擊連結。";
+                alert("❌ 請輸入電子信箱！"); return;
             }
             
-            btn.disabled = false;
-            btn.textContent = "發送連結";
+            document.getElementById('btnSendReset').textContent = "發送中...";
+            const redirectUrl = window.location.origin + window.location.pathname;
+            
+            try {
+                const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
+                if (error) {
+                    alert("發送失敗：" + error.message);
+                } else {
+                    alert("✅ 重設信件已發送！請去信箱點擊連結。");
+                }
+            } catch(err) {
+                alert("系統異常：" + err.message);
+            } finally {
+                document.getElementById('btnSendReset').textContent = "發送連結";
+            }
         });
 
-        // 步驟 2: 設定新密碼並登入
         document.getElementById('btnUpdatePwd').addEventListener('click', async () => {
             const newPassword = document.getElementById('newPasswordInput').value;
-            const msgDiv = document.getElementById('updateMsg');
-            const btn = document.getElementById('btnUpdatePwd');
-            
             if (newPassword.length < 6) {
-                msgDiv.className = "text-sm text-red-500 mt-2";
-                msgDiv.textContent = "密碼至少需要 6 碼";
-                msgDiv.classList.remove('hidden');
-                return;
+                alert("❌ 密碼至少需要 6 碼！"); return;
             }
-
-            btn.disabled = true;
-            btn.textContent = "更新中...";
-
-            // 更新密碼
-            const { error } = await supabase.auth.updateUser({
-                password: newPassword
-            });
-
-            msgDiv.classList.remove('hidden');
-            if (error) {
-                msgDiv.className = "text-sm text-red-500 mt-2";
-                msgDiv.textContent = "更新失敗：" + error.message;
-                btn.disabled = false;
-                btn.textContent = "確認修改並登入";
-            } else {
-                msgDiv.className = "text-sm text-green-600 font-medium mt-2";
-                msgDiv.textContent = "✅ 密碼修改成功！正在進入系統...";
-                isRecoveringPassword = false; // 解除密碼重設狀態
-                
-                setTimeout(() => {
-                    showApp();
-                }, 1500);
+            document.getElementById('btnUpdatePwd').textContent = "更新中...";
+            try {
+                const { error } = await supabase.auth.updateUser({ password: newPassword });
+                if (error) {
+                    alert("更新失敗：" + error.message);
+                } else {
+                    alert("✅ 密碼修改成功！正在進入系統...");
+                    isRecoveringPassword = false;
+                    setTimeout(() => showApp(), 1500);
+                }
+            } catch(err) {
+                alert("系統異常：" + err.message);
+            } finally {
+                document.getElementById('btnUpdatePwd').textContent = "確認修改並登入";
             }
         });
 
-        // ------------------------------------------
-        // App 核心邏輯 (讀取/分析/儲存)
-        // ------------------------------------------
         async function loadCloudHistory() {
-            document.getElementById('emptyState').innerHTML = '<p class="text-slate-500">正在從雲端同步您的資料...</p>';
             const { data, error } = await supabase.from('purchases').select('*').order('created_at', { ascending: false });
-            if (error) {
-                console.error(error);
-                document.getElementById('emptyState').innerHTML = '<p class="text-red-500">讀取失敗，請重新整理頁面。</p>';
-                return;
+            if (!error) {
+                userHistory = data || [];
+                populateDatalists();
             }
-            userHistory = data || [];
-            populateDatalists();
-            document.getElementById('emptyState').innerHTML = '<p class="text-slate-500">同步完成。請在左側輸入商品進行分析。</p>';
         }
 
         function populateDatalists() {
@@ -418,24 +373,22 @@
             );
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('resultsArea').classList.remove('hidden');
-            document.getElementById('resNameBrand').textContent = `${currentItem.brand} ${currentItem.name}`;
-            document.getElementById('resUnitPrice').textContent = `${currentItem.unit_price} ${currentItem.currency}/${currentItem.std_unit}`;
-
-            const reportContent = document.getElementById('reportContent');
             const reportCard = document.getElementById('reportCard');
+            const reportContent = document.getElementById('reportContent');
+
             if (relevantHistory.length === 0) {
                 reportCard.className = "glass-panel rounded-2xl shadow-xl p-6 border-l-4 border-slate-400";
-                reportContent.innerHTML = `<p>這是您第一次記錄此商品。建議直接購買並存檔，下次就能比價！</p>`;
+                reportContent.innerHTML = `<p>這是您第一次記錄 <strong>${currentItem.brand} ${currentItem.name}</strong>。建議購買並存檔，下次就能比價！</p>`;
             } else {
                 const prices = relevantHistory.map(h => h.unit_price);
                 const avgPrice = (prices.reduce((a,b) => a+b, 0) / prices.length).toFixed(4);
                 
                 if (currentItem.unit_price < avgPrice) {
                     reportCard.className = "glass-panel rounded-2xl shadow-xl p-6 border-l-4 border-green-500";
-                    reportContent.innerHTML = `<p class="font-bold text-green-700 mb-2">✅ 強烈推薦購買</p><p>比歷史平均便宜！</p><p class="text-sm mt-2">歷史平均: ${avgPrice} ${currentItem.currency}/${currentItem.std_unit}</p>`;
+                    reportContent.innerHTML = `<p class="font-bold text-green-700 mb-2">✅ 強烈推薦購買</p><p>目前單位價 <strong>${currentItem.unit_price}</strong> 比歷史平均便宜！</p><p class="text-sm mt-2 text-slate-500">歷史平均: ${avgPrice} ${currentItem.currency}/${currentItem.std_unit}</p>`;
                 } else {
                     reportCard.className = "glass-panel rounded-2xl shadow-xl p-6 border-l-4 border-red-500";
-                    reportContent.innerHTML = `<p class="font-bold text-red-700 mb-2">⚠️ 買貴了</p><p>比歷史平均貴，建議觀望。</p><p class="text-sm mt-2">歷史平均: ${avgPrice} ${currentItem.currency}/${currentItem.std_unit}</p>`;
+                    reportContent.innerHTML = `<p class="font-bold text-red-700 mb-2">⚠️ 買貴了</p><p>目前單位價 <strong>${currentItem.unit_price}</strong> 比歷史平均貴，建議觀望。</p><p class="text-sm mt-2 text-slate-500">歷史平均: ${avgPrice} ${currentItem.currency}/${currentItem.std_unit}</p>`;
                 }
             }
         }
@@ -446,20 +399,24 @@
             btn.disabled = true;
             btn.textContent = "上傳中...";
 
-            const { data, error } = await supabase.from('purchases').insert([currentAnalyzedItem]).select();
-
-            if (error) {
-                console.error(error);
-                alert("儲存失敗：" + error.message);
-                btn.disabled = false;
+            try {
+                const { data, error } = await supabase.from('purchases').insert([currentAnalyzedItem]).select();
+                if (error) {
+                    alert("儲存失敗：" + error.message);
+                } else {
+                    userHistory.unshift(data[0]);
+                    populateDatalists();
+                    alert("✅ 已成功存入雲端！");
+                    btn.classList.replace('bg-blue-600', 'bg-green-600');
+                }
+            } catch(err) {
+                alert("系統異常：" + err.message);
+            } finally {
                 btn.textContent = "加入雲端紀錄";
-            } else {
-                userHistory.unshift(data[0]); // 加到陣列最前面
-                populateDatalists();
-                btn.textContent = "已存入雲端！";
-                btn.classList.replace('bg-blue-600', 'bg-green-600');
+                btn.disabled = false;
             }
         });
+
         document.getElementById('btnNew').addEventListener('click', function() {
             document.getElementById('priceForm').reset();
             document.getElementById('itemDate').valueAsDate = new Date();
@@ -467,8 +424,6 @@
             document.getElementById('emptyState').classList.remove('hidden');
             document.getElementById('resultsArea').classList.add('hidden');
             const btnSave = document.getElementById('btnSave');
-            btnSave.disabled = false;
-            btnSave.textContent = "加入雲端紀錄";
             btnSave.classList.replace('bg-green-600', 'bg-blue-600');
         });
     </script>
