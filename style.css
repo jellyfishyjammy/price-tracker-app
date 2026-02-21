@@ -1,0 +1,27 @@
+/* style.css */
+body { 
+    font-family: 'Inter', sans-serif; 
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 隱藏捲軸但可滾動 */
+.no-scrollbar::-webkit-scrollbar { 
+    display: none; 
+}
+.no-scrollbar { 
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+}
+
+/* 隱藏原生單選框，並設計自訂的表情選取特效 */
+input[type="radio"]:checked + div {
+    transform: scale(1.3);
+    opacity: 1;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+}
