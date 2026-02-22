@@ -74,9 +74,8 @@ function getLocalDateString() {
     const dd = String(today.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
 }
-document.getElementById('itemDate').value = getLocalDateString();
 
-// --- 視圖切換邏輯 ---
+// --- UI 切換邏輯 ---
 const views = {
     input: document.getElementById('viewInput'),
     history: document.getElementById('viewHistory'),
@@ -111,12 +110,51 @@ tabs.input.addEventListener('click', () => switchView('input'));
 tabs.history.addEventListener('click', () => switchView('history'));
 tabs.settings.addEventListener('click', () => switchView('settings'));
 
-// --- 認證邏輯 ---
+// --- 🎯 補上的登入與註冊邏輯 ---
+document.getElementById('btnLogin').addEventListener('click', async () => {
+    const btn = document.getElementById('btnLogin');
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    
+    if (!email || !password) return alert("請輸入信箱與密碼！");
+    btn.textContent = "登入中...";
+    
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) alert("登入失敗：" + error.message);
+    btn.textContent = "登入";
+});
+
+document.getElementById('btnRegister').addEventListener('click', async () => {
+    const btn = document.getElementById('btnRegister');
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    
+    if (!email || password.length < 6) return alert("請輸入有效的信箱與至少6碼密碼！");
+    btn.textContent = "註冊中...";
+    
+    const { error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) alert("註冊失敗：" + error.message);
+    else alert("🎉 註冊成功！如果沒收到信，請直接按登入試試看。");
+    btn.textContent = "註冊帳號";
+});
+
+// 忘記密碼 UI 切換
+document.getElementById('btnShowForgot').addEventListener('click', () => {
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('forgotSection').classList.remove('hidden');
+});
+document.getElementById('btnBackToLogin').addEventListener('click', () => {
+    document.getElementById('forgotSection').classList.add('hidden');
+    document.getElementById('authSection').classList.remove('hidden');
+});
+
+// --- 認證狀態監聽 ---
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
     if (session) { 
         currentUser = session.user; 
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
+        document.getElementById('itemDate').value = getLocalDateString();
         await loadCloudHistory();
         initCategoryDropdowns();
     } else {
@@ -133,16 +171,11 @@ function initCategoryDropdowns() {
     const catInput = document.getElementById('itemCategory');
     const tagInput = document.getElementById('itemTag');
 
-    // 1. 選主分類 -> 更新子種類清單
-    catInput.addEventListener('change', (e) => {
-        updateTagOptions(e.target.value);
-    });
+    catInput.addEventListener('change', (e) => updateTagOptions(e.target.value));
 
-    // 2. 輸種類 -> 反推主分類
     tagInput.addEventListener('change', (e) => {
         const selectedTag = e.target.value.trim();
         if(!selectedTag) return;
-
         for (const [cat, tags] of Object.entries(categoryMap)) {
             if (tags.includes(selectedTag)) {
                 if (catInput.value !== cat) {
@@ -164,7 +197,6 @@ function updateTagOptions(cat) {
     tagList.innerHTML = categoryMap[cat].map(t => `<option value="${t}">`).join('');
 }
 
-// 3. 輸名稱 -> 先找歷史紀錄，沒有再找字典
 document.getElementById('itemName').addEventListener('change', (e) => {
     const name = e.target.value.trim();
     if(!name) return;
@@ -336,7 +368,7 @@ function renderAnalysisReport(item) {
     }
 }
 
-// [Modal 與清空機制實作]
+// Modal 與清空機制實作
 function clearAndResetForm() {
     document.getElementById('priceForm').reset();
     document.getElementById('itemDate').value = getLocalDateString();
@@ -348,33 +380,26 @@ function clearAndResetForm() {
     btnSave.disabled = false;
 }
 
-// [優化: 加上嚴謹的錯誤防護 (try...catch...finally)，防止按鈕卡死]
-// [終極優化: 加上 Timeout 超時自爆機制，絕對不讓按鈕無限期卡死]
 document.getElementById('btnSave').addEventListener('click', async () => {
     const btn = document.getElementById('btnSave');
     btn.disabled = true;
     btn.textContent = "儲存中...";
     
     try {
-        // 建立一個 8 秒的超時炸彈
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => reject(new Error("伺服器連線超時 (Timeout 8s)，請求無回應，請重試。")), 8000);
         });
 
-        // Promise.race 會讓 Supabase 請求跟超時炸彈賽跑，誰先發生就執行誰
         const { data, error } = await Promise.race([
             supabaseClient.from('purchases').insert([currentAnalyzedItem]).select(),
             timeoutPromise
         ]);
         
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         if (data && data.length > 0) {
             userHistory.unshift(data[0]);
             document.getElementById('nameList').innerHTML = [...new Set(userHistory.map(i => i.name))].map(v => `<option value="${escapeHTML(v)}">`).join('');
-            // 觸發成功 Modal
             document.getElementById('successModal').classList.remove('hidden');
         } else {
             throw new Error("儲存成功，但未收到資料庫回傳的確認資料。");
@@ -383,26 +408,22 @@ document.getElementById('btnSave').addEventListener('click', async () => {
         console.error("儲存失敗詳細資訊:", err);
         alert("儲存失敗：" + (err.message || "請檢查您的網路連線或 F12 Console 錯誤。"));
     } finally {
-        // 無論剛剛成功、失敗、或是被超時炸彈打斷，這行絕對會執行
         btn.disabled = false;
         btn.textContent = "加入購物紀錄";
     }
 });
 
-// Modal 按鈕：查看歷史
 document.getElementById('btnModalGoHistory').addEventListener('click', () => {
     document.getElementById('successModal').classList.add('hidden');
     clearAndResetForm();
     switchView('history');
 });
 
-// Modal 按鈕：繼續新增
 document.getElementById('btnModalContinue').addEventListener('click', () => {
     document.getElementById('successModal').classList.add('hidden');
     clearAndResetForm();
 });
 
-// 一般清空表單按鈕
 document.getElementById('btnNew').addEventListener('click', () => {
     clearAndResetForm();
 });
