@@ -1,24 +1,31 @@
-// app.js
+// ==========================================
+// app.js - 智能比價管家 (終極全功能整合版)
+// ==========================================
+
+// 系統錯誤捕捉
 window.onerror = function(msg, url, line) {
-    alert("網頁發生錯誤：" + msg + "\n(請檢查網路或 F12 Console)");
+    console.error("系統錯誤報告:", msg, "於", url, "第", line, "行");
 };
 
-// [🚨 終極防呆：環境偵測警告]
+// [🚨 安全環境檢查] 
+// 避免使用者直接點擊 HTML 檔案導致瀏覽器 CORS 阻擋連線
 if (window.location.protocol === 'file:') {
-    alert("⚠️ 系統偵測提示：\n您目前是直接點擊檔案 (file://) 開啟網頁。\n\n基於瀏覽器的嚴格安全防護，這種方式會阻擋網頁與資料庫的連線。這就是為什麼您的「登入」、「登出」和「儲存」會完全沒反應或超時卡死！\n\n請將檔案上傳後，改用 GitHub Pages 網址 (https://...) 開啟，所有功能就會瞬間恢復正常囉！");
+    alert("⚠️ 安全環境偵測：\n您目前是直接開啟檔案 (file://)。\n這會導致瀏覽器阻擋與 Supabase 的通訊，造成登入與儲存失敗。\n請務必上傳 GitHub Pages 或使用 VS Code Live Server 執行網頁。");
 }
 
+// Supabase 初始化
 const SUPABASE_URL = 'https://fugdnxzywuypxfsetsmo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1Z2RueHp5d3V5cHhmc2V0c21vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3MDI1NTMsImV4cCI6MjA4NzI3ODU1M30.L6ON4ZcBM_3eqbQve4S8BJBpyzfAH4KtHw6EfgtCoF8';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// 全局狀態管理
 let currentUser = null;
 let userHistory = [];
 let currentAnalyzedItem = null;
-let priceChartInstance = null;
 let editingRecordId = null;
 let activeCategory = null;
 
+// [數據結構 1: 細緻化的 10 大預設分類]
 let categoryMap = {
     "飲品與乳品": ["鮮奶/保久乳", "茶葉/茶包", "沖泡咖啡", "果汁", "碳酸飲料", "瓶裝水"],
     "生鮮與食品": ["生鮮肉品", "海鮮/水產", "蔬菜水果", "冷凍食品", "零食餅乾", "泡麵罐頭", "米油鹽/調味"],
@@ -32,6 +39,7 @@ let categoryMap = {
     "其他": ["五金修繕", "汽機車用品", "雜項"]
 };
 
+// [數據結構 2: 智慧偵測關鍵字字典]
 const keywordDict = {
     "乳": { cat: "飲品與乳品", tag: "鮮奶/保久乳" }, "奶": { cat: "飲品與乳品", tag: "鮮奶/保久乳" },
     "茶": { cat: "飲品與乳品", tag: "茶葉/茶包" }, "咖啡": { cat: "飲品與乳品", tag: "沖泡咖啡" },
@@ -63,21 +71,20 @@ const keywordDict = {
     "螺絲": { cat: "其他", tag: "五金修繕" }, "機油": { cat: "其他", tag: "汽機車用品" }
 };
 
+// --- 基礎工具 ---
 function escapeHTML(str) {
     if (!str) return '';
-    return String(str).replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-    }[tag] || tag));
+    return String(str).replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t] || t));
 }
 
 function getLocalDateString() {
     const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    return today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 }
 
+function getRatingEmoji(v) { return v === 'good' ? '😍' : (v === 'bad' ? '🤢' : '😐'); }
+
+// --- 視圖管理 ---
 const views = {
     input: document.getElementById('viewInput'),
     history: document.getElementById('viewHistory'),
@@ -96,11 +103,9 @@ function switchView(viewName) {
     views[viewName].classList.remove('hidden');
 
     Object.keys(tabs).forEach(k => {
-        if (k === viewName) {
-            tabs[k].className = "px-6 py-2.5 bg-white text-slate-800 font-bold rounded-xl shadow-clay transition-all text-sm";
-        } else {
-            tabs[k].className = "px-6 py-2.5 text-slate-500 font-bold rounded-xl transition-all text-sm";
-        }
+        tabs[k].className = (k === viewName) 
+            ? "px-6 py-2.5 bg-white text-slate-800 font-bold rounded-xl shadow-clay transition-all text-sm"
+            : "px-6 py-2.5 text-slate-500 font-bold rounded-xl transition-all text-sm";
     });
 
     if (viewName === 'input') document.getElementById('itemDate').value = getLocalDateString();
@@ -108,94 +113,68 @@ function switchView(viewName) {
     if (viewName === 'settings') renderSettings();
 }
 
-tabs.input.addEventListener('click', () => switchView('input'));
-tabs.history.addEventListener('click', () => switchView('history'));
-tabs.settings.addEventListener('click', () => switchView('settings'));
+// 綁定導覽列事件
+Object.keys(tabs).forEach(k => tabs[k].onclick = () => switchView(k));
 
-// --- [🛡️ 登入功能裝甲升級] ---
-document.getElementById('btnLogin').addEventListener('click', async () => {
+// --- 🔐 認證與安全性防護 ---
+
+// 登入
+document.getElementById('btnLogin').onclick = async () => {
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
     const btn = document.getElementById('btnLogin');
-    const email = document.getElementById('emailInput').value.trim();
-    const password = document.getElementById('passwordInput').value;
+    if (!email || !password) return alert("請填寫信箱與密碼");
     
-    if (!email || !password) return alert("請輸入信箱與密碼！");
-    
-    btn.disabled = true;
-    btn.textContent = "登入中...";
-    
+    btn.disabled = true; btn.textContent = "登入中...";
     try {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        const { error } = await Promise.race([
+            supabaseClient.auth.signInWithPassword({ email, password }),
+            new Promise((_, r) => setTimeout(() => r(new Error("伺服器連線超時")), 5000))
+        ]);
         if (error) throw error;
-    } catch (err) {
-        console.error("登入錯誤:", err);
-        alert("登入失敗：" + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "登入";
-    }
-});
+    } catch (err) { alert("登入失敗：" + err.message); }
+    finally { btn.disabled = false; btn.textContent = "登入"; }
+};
 
-// --- [🛡️ 註冊功能裝甲升級] ---
-document.getElementById('btnRegister').addEventListener('click', async () => {
-    const btn = document.getElementById('btnRegister');
+// 註冊
+document.getElementById('btnRegister').onclick = async () => {
     const email = document.getElementById('emailInput').value.trim();
     const password = document.getElementById('passwordInput').value;
+    const btn = document.getElementById('btnRegister');
+    if (password.length < 6) return alert("密碼需至少6碼");
     
-    if (!email || password.length < 6) return alert("請輸入有效的信箱與至少6碼密碼！");
-    
-    btn.disabled = true;
-    btn.textContent = "註冊中...";
-    
+    btn.disabled = true; btn.textContent = "註冊中...";
     try {
         const { error } = await supabaseClient.auth.signUp({ email, password });
         if (error) throw error;
-        alert("🎉 註冊成功！請直接點擊登入。");
-    } catch (err) {
-        console.error("註冊錯誤:", err);
-        alert("註冊失敗：" + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "註冊帳號";
-    }
-});
+        alert("註冊成功，請直接登入！");
+    } catch (err) { alert("註冊失敗：" + err.message); }
+    finally { btn.disabled = false; btn.textContent = "註冊帳號"; }
+};
 
-// --- [🛡️ 登出功能裝甲升級] ---
-document.getElementById('btnLogout').addEventListener('click', async () => {
+// 登出 (強力防護版)
+document.getElementById('btnLogout').onclick = async () => {
     const btn = document.getElementById('btnLogout');
-    btn.disabled = true;
-    btn.textContent = "登出中...";
-    
+    btn.disabled = true; btn.textContent = "登出中...";
     try {
-        const { error } = await supabaseClient.auth.signOut();
-        if (error) throw error;
-    } catch (err) {
-        console.error("登出發生錯誤:", err);
-        alert("與伺服器斷線，已為您強制登出畫面。(" + err.message + ")");
+        await Promise.race([
+            supabaseClient.auth.signOut(),
+            new Promise((_, r) => setTimeout(() => r(), 2000)) // 2秒沒回應就強行離線
+        ]);
     } finally {
-        // 無論伺服器有沒有回應，都強制清空本地畫面，絕對不卡死！
         currentUser = null;
         document.getElementById('appScreen').classList.add('hidden');
         document.getElementById('loginScreen').classList.remove('hidden');
-        btn.disabled = false;
-        btn.textContent = "登出";
+        btn.disabled = false; btn.textContent = "登出";
     }
-});
+};
 
-document.getElementById('btnShowForgot').addEventListener('click', () => {
-    document.getElementById('authSection').classList.add('hidden');
-    document.getElementById('forgotSection').classList.remove('hidden');
-});
-document.getElementById('btnBackToLogin').addEventListener('click', () => {
-    document.getElementById('forgotSection').classList.add('hidden');
-    document.getElementById('authSection').classList.remove('hidden');
-});
-
+// 監聽認證狀態
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
-    if (session) { 
-        currentUser = session.user; 
+    if (session) {
+        currentUser = session.user;
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
-        document.getElementById('itemDate').value = getLocalDateString();
         await loadCloudHistory();
         initCategoryDropdowns();
     } else {
@@ -204,6 +183,8 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     }
 });
 
+// --- 🛍️ 輸入邏輯與雙向智慧連動 ---
+
 function initCategoryDropdowns() {
     const catList = document.getElementById('categoryList');
     catList.innerHTML = Object.keys(categoryMap).map(c => `<option value="${c}">`).join('');
@@ -211,43 +192,37 @@ function initCategoryDropdowns() {
     const catInput = document.getElementById('itemCategory');
     const tagInput = document.getElementById('itemTag');
 
-    catInput.addEventListener('change', (e) => updateTagOptions(e.target.value));
+    catInput.onchange = (e) => updateTagOptions(e.target.value);
 
-    tagInput.addEventListener('change', (e) => {
-        const selectedTag = e.target.value.trim();
-        if(!selectedTag) return;
+    // [智慧偵測：種類反向填入主分類]
+    tagInput.onchange = (e) => {
+        const val = e.target.value.trim();
         for (const [cat, tags] of Object.entries(categoryMap)) {
-            if (tags.includes(selectedTag)) {
-                if (catInput.value !== cat) {
-                    catInput.value = cat;
-                    updateTagOptions(cat);
-                }
+            if (tags.includes(val)) {
+                catInput.value = cat;
+                updateTagOptions(cat);
                 break;
             }
         }
-    });
+    };
 }
 
 function updateTagOptions(cat) {
     const tagList = document.getElementById('tagList');
-    if (!cat || !categoryMap[cat]) {
-        tagList.innerHTML = '';
-        return;
-    }
+    if (!cat || !categoryMap[cat]) return tagList.innerHTML = '';
     tagList.innerHTML = categoryMap[cat].map(t => `<option value="${t}">`).join('');
 }
 
-document.getElementById('itemName').addEventListener('change', (e) => {
+// [智慧偵測：名稱聯動]
+document.getElementById('itemName').onchange = (e) => {
     const name = e.target.value.trim();
-    if(!name) return;
-
+    if (!name) return;
     const past = userHistory.find(h => h.name === name);
     if (past) {
         document.getElementById('itemCategory').value = past.category;
         updateTagOptions(past.category);
         document.getElementById('itemTag').value = past.tag;
         document.getElementById('itemBrand').value = past.brand || '';
-        document.getElementById('itemStore').value = past.store || '';
         document.getElementById('itemUnit').value = past.unit || 'g';
     } else {
         for (const key in keywordDict) {
@@ -259,105 +234,11 @@ document.getElementById('itemName').addEventListener('change', (e) => {
             }
         }
     }
-});
-
-async function loadCloudHistory() {
-    const { data, error } = await supabaseClient.from('purchases').select('*').order('date', { ascending: false });
-    if (!error) {
-        userHistory = data || [];
-        document.getElementById('nameList').innerHTML = [...new Set(userHistory.map(i => i.name))].map(v => `<option value="${escapeHTML(v)}">`).join('');
-    }
-}
-
-function renderHistoryTable() {
-    const tbody = document.getElementById('historyTableBody');
-    const search = document.getElementById('historySearch').value.toLowerCase();
-    
-    let filtered = userHistory.filter(h => 
-        (h.name + h.tag + h.brand).toLowerCase().includes(search)
-    );
-
-    tbody.innerHTML = filtered.map(item => `
-        <tr class="hover-clay border-b border-slate-100 transition-all">
-            <td class="p-4">
-                <span class="text-slate-400 block text-xs">${item.date}</span>
-                <span class="text-2xl mt-1 block">${getRatingEmoji(item.rating)}</span>
-            </td>
-            <td class="p-4">
-                <span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">${escapeHTML(item.category)} > ${escapeHTML(item.tag)}</span>
-                <div class="font-bold text-slate-800 mt-1">${escapeHTML(item.name)} <span class="text-slate-400 font-normal text-xs">${escapeHTML(item.brand||'')}</span></div>
-            </td>
-            <td class="p-4 text-xs text-slate-500">
-                ${escapeHTML(item.store || '-')}
-                ${item.notes ? `<div class="text-blue-400 mt-1 truncate w-24">📝 筆記中...</div>` : ''}
-            </td>
-            <td class="p-4 text-sm">
-                <span class="text-slate-400">${item.qty}${item.unit}</span><br>
-                <span class="font-bold">${item.price} ${item.currency}</span>
-            </td>
-            <td class="p-4 font-black text-blue-600">${item.unit_price}/${item.std_unit}</td>
-            <td class="p-4 text-center">
-                <button onclick="openEditMode('${item.id}')" class="text-xs font-bold text-blue-500 hover:underline">編輯評價</button>
-                <button onclick="deleteRecord('${item.id}')" class="ml-2 text-xs font-bold text-red-300 hover:text-red-500">刪除</button>
-            </td>
-        </tr>
-    `).join('');
-    
-    document.getElementById('historyEmpty').className = filtered.length ? "hidden" : "text-center py-20 text-slate-400 font-bold";
-}
-
-function getRatingEmoji(val) { return val === 'good' ? '😍' : (val === 'bad' ? '🤢' : '😐'); }
-
-window.deleteRecord = async (id) => {
-    if (!confirm("確定要刪除這筆紀錄嗎？")) return;
-    const { error } = await supabaseClient.from('purchases').delete().eq('id', id);
-    if (!error) {
-        userHistory = userHistory.filter(h => h.id !== id);
-        renderHistoryTable();
-    } else { alert("刪除失敗：" + error.message); }
 };
 
-window.openEditMode = (id) => {
-    const item = userHistory.find(h => h.id === id);
-    if (!item) return;
-    
-    editingRecordId = id;
-    switchView('edit');
-    
-    document.getElementById('editInfoDisplay').innerHTML = `
-        <div class="text-sm">
-            <p class="font-bold text-slate-800">${escapeHTML(item.name)}</p>
-            <p class="text-slate-500 text-xs">${item.date} | ${item.price} ${item.currency} (${item.qty}${item.unit})</p>
-        </div>
-    `;
-    
-    document.getElementById('editNotes').value = item.notes || '';
-    const radios = document.getElementsByName('editRating');
-    radios.forEach(r => { if(r.value === (item.rating || 'ok')) r.checked = true; });
-};
+// --- 📊 分析與儲存 (含 8 秒防死鎖超時) ---
 
-document.getElementById('btnCancelEditMode').addEventListener('click', () => switchView('history'));
-
-document.getElementById('editForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('btnUpdateRecord');
-    btn.disabled = true;
-    
-    const rating = document.querySelector('input[name="editRating"]:checked').value;
-    const notes = document.getElementById('editNotes').value.trim();
-    
-    const { error } = await supabaseClient.from('purchases').update({ rating, notes }).eq('id', editingRecordId);
-    
-    if (!error) {
-        const idx = userHistory.findIndex(h => h.id === editingRecordId);
-        userHistory[idx].rating = rating;
-        userHistory[idx].notes = notes;
-        switchView('history');
-    } else { alert("更新失敗：" + error.message); }
-    btn.disabled = false;
-});
-
-document.getElementById('priceForm').addEventListener('submit', function(e) {
+document.getElementById('priceForm').onsubmit = (e) => {
     e.preventDefault();
     const qty = parseFloat(document.getElementById('itemQty').value);
     const unit = document.getElementById('itemUnit').value;
@@ -382,7 +263,7 @@ document.getElementById('priceForm').addEventListener('submit', function(e) {
     };
 
     renderAnalysisReport(currentAnalyzedItem);
-});
+};
 
 function renderAnalysisReport(item) {
     document.getElementById('emptyState').classList.add('hidden');
@@ -395,115 +276,167 @@ function renderAnalysisReport(item) {
     if (tagHistory.length > 0) {
         const avg = (tagHistory.reduce((a, b) => a + b.unit_price, 0) / tagHistory.length).toFixed(4);
         const isCheap = item.unit_price <= avg;
-        document.getElementById('reportContent').innerHTML = `
-            <p class="font-bold ${isCheap ? 'text-green-600' : 'text-orange-500'}">
-                ${isCheap ? '✅ 划算！' : '👀 稍貴'} 比歷史平均 (${avg}) ${isCheap ? '低' : '高'}。
-            </p>
-        `;
+        document.getElementById('reportContent').innerHTML = `<p class="font-bold ${isCheap ? 'text-green-600' : 'text-orange-500'}">${isCheap ? '✅ 划算！' : '👀 稍貴'} 比平均 (${avg}) ${isCheap ? '低' : '高'}。</p>`;
     } else {
-        document.getElementById('reportContent').textContent = "這是此種類的第一筆紀錄，將作為未來比價基準。";
+        document.getElementById('reportContent').textContent = "這是新種類的第一筆紀錄，將作為比價基準。";
     }
 }
 
-function clearAndResetForm() {
-    document.getElementById('priceForm').reset();
-    document.getElementById('itemDate').value = getLocalDateString();
-    document.getElementById('emptyState').classList.remove('hidden');
-    document.getElementById('resultsArea').classList.add('hidden');
-    
-    const btnSave = document.getElementById('btnSave');
-    btnSave.textContent = "加入購物紀錄";
-    btnSave.disabled = false;
-}
-
-document.getElementById('btnSave').addEventListener('click', async () => {
+// 儲存紀錄 (含超時防護與成功彈窗)
+document.getElementById('btnSave').onclick = async () => {
     const btn = document.getElementById('btnSave');
-    btn.disabled = true;
-    btn.textContent = "儲存中...";
+    btn.disabled = true; btn.textContent = "儲存中...";
     
     try {
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("伺服器連線超時 (Timeout 8s)，請求無回應，請重試。")), 8000);
-        });
-
+        const timeoutPromise = new Promise((_, r) => setTimeout(() => r(new Error("伺服器連線超時，請檢查網路。")), 8000));
         const { data, error } = await Promise.race([
             supabaseClient.from('purchases').insert([currentAnalyzedItem]).select(),
             timeoutPromise
         ]);
-        
         if (error) throw error;
-
-        if (data && data.length > 0) {
+        if (data) {
             userHistory.unshift(data[0]);
-            document.getElementById('nameList').innerHTML = [...new Set(userHistory.map(i => i.name))].map(v => `<option value="${escapeHTML(v)}">`).join('');
             document.getElementById('successModal').classList.remove('hidden');
-        } else {
-            throw new Error("儲存成功，但未收到資料庫回傳的確認資料。");
         }
-    } catch (err) {
-        console.error("儲存失敗詳細資訊:", err);
-        alert("儲存失敗：" + (err.message || "請檢查網路連線，或確保不是用 file:/// 開啟檔案。"));
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "加入購物紀錄";
-    }
-});
+    } catch (err) { alert("儲存失敗：" + err.message); }
+    finally { btn.disabled = false; btn.textContent = "加入購物紀錄"; }
+};
 
-document.getElementById('btnModalGoHistory').addEventListener('click', () => {
+// Modal 操作
+const clearForm = () => {
+    document.getElementById('priceForm').reset();
+    document.getElementById('itemDate').value = getLocalDateString();
+    document.getElementById('resultsArea').classList.add('hidden');
+    document.getElementById('emptyState').classList.remove('hidden');
+};
+
+document.getElementById('btnModalContinue').onclick = () => {
     document.getElementById('successModal').classList.add('hidden');
-    clearAndResetForm();
+    clearForm();
+};
+
+document.getElementById('btnModalGoHistory').onclick = () => {
+    document.getElementById('successModal').classList.add('hidden');
+    clearForm();
     switchView('history');
-});
+};
 
-document.getElementById('btnModalContinue').addEventListener('click', () => {
-    document.getElementById('successModal').classList.add('hidden');
-    clearAndResetForm();
-});
+document.getElementById('btnNew').onclick = clearForm;
 
-document.getElementById('btnNew').addEventListener('click', () => {
-    clearAndResetForm();
-});
+// --- 📜 歷史清單：過濾、排序與搜尋 ---
+
+async function loadCloudHistory() {
+    const { data } = await supabaseClient.from('purchases').select('*').order('date', { ascending: false });
+    if (data) {
+        userHistory = data;
+        document.getElementById('nameList').innerHTML = [...new Set(userHistory.map(i => i.name))].map(v => `<option value="${escapeHTML(v)}">`).join('');
+    }
+}
+
+function renderHistoryTable() {
+    const tbody = document.getElementById('historyTableBody');
+    const search = document.getElementById('historySearch').value.toLowerCase();
+    const dateFilter = document.getElementById('historyDateFilter').value;
+    const sortVal = document.getElementById('historySort').value;
+
+    let filtered = userHistory.filter(h => (h.name + h.tag + h.brand).toLowerCase().includes(search));
+    if (dateFilter) filtered = filtered.filter(h => h.date === dateFilter);
+
+    if (sortVal === 'dateAsc') filtered.sort((a,b) => new Date(a.date) - new Date(b.date));
+    else if (sortVal === 'tagAsc') filtered.sort((a,b) => a.tag.localeCompare(b.tag));
+
+    tbody.innerHTML = filtered.map(item => `
+        <tr class="hover-clay border-b border-slate-100 transition-all">
+            <td class="p-4"><span class="text-slate-400 block text-xs">${item.date}</span><span class="text-2xl mt-1 block">${getRatingEmoji(item.rating)}</span></td>
+            <td class="p-4"><span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">${escapeHTML(item.category)} > ${escapeHTML(item.tag)}</span><div class="font-bold text-slate-800 mt-1">${escapeHTML(item.name)} <span class="text-slate-400 font-normal text-xs">${escapeHTML(item.brand||'')}</span></div></td>
+            <td class="p-4 text-xs text-slate-500">${escapeHTML(item.store || '-')}${item.notes ? `<div class="text-blue-400 mt-1 truncate w-24">📝 筆記中...</div>` : ''}</td>
+            <td class="p-4 text-sm"><span class="text-slate-400">${item.qty}${item.unit}</span><br><span class="font-bold">${item.price} ${item.currency}</span></td>
+            <td class="p-4 font-black text-blue-600">${item.unit_price}/${item.std_unit}</td>
+            <td class="p-4 text-center">
+                <button onclick="openEditMode('${item.id}')" class="text-xs font-bold text-blue-500 hover:underline">編輯評價</button>
+                <button onclick="deleteRecord('${item.id}')" class="ml-2 text-xs font-bold text-red-300 hover:text-red-500">刪除</button>
+            </td>
+        </tr>
+    `).join('');
+    document.getElementById('historyEmpty').className = filtered.length ? "hidden" : "text-center py-20 text-slate-400 font-bold";
+}
+
+// 事件綁定
+document.getElementById('historySearch').oninput = renderHistoryTable;
+document.getElementById('historyDateFilter').onchange = renderHistoryTable;
+document.getElementById('historySort').onchange = renderHistoryTable;
+
+// 刪除紀錄
+window.deleteRecord = async (id) => {
+    if (!confirm("確定要刪除這筆紀錄嗎？")) return;
+    const { error } = await supabaseClient.from('purchases').delete().eq('id', id);
+    if (!error) { userHistory = userHistory.filter(h => h.id !== id); renderHistoryTable(); }
+    else alert("刪除失敗");
+};
+
+// 編輯評價
+window.openEditMode = (id) => {
+    const item = userHistory.find(h => h.id === id);
+    if (!item) return;
+    editingRecordId = id; switchView('edit');
+    document.getElementById('editInfoDisplay').innerHTML = `<p class="font-bold text-slate-800">${escapeHTML(item.name)}</p><p class="text-slate-500 text-xs">${item.date} | ${item.price} ${item.currency}</p>`;
+    document.getElementById('editNotes').value = item.notes || '';
+    const rs = document.getElementsByName('editRating');
+    rs.forEach(r => { if(r.value === (item.rating || 'ok')) r.checked = true; });
+};
+
+document.getElementById('btnCancelEditMode').onclick = () => switchView('history');
+
+document.getElementById('editForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const rating = document.querySelector('input[name="editRating"]:checked').value;
+    const notes = document.getElementById('editNotes').value.trim();
+    const { error } = await supabaseClient.from('purchases').update({ rating, notes }).eq('id', editingRecordId);
+    if (!error) { 
+        const i = userHistory.findIndex(h => h.id === editingRecordId);
+        userHistory[i].rating = rating; userHistory[i].notes = notes;
+        switchView('history'); 
+    } else alert("更新失敗");
+};
+
+// --- ⚙️ 分類管理功能 ---
 
 function renderSettings() {
     const list = document.getElementById('categoryManagerList');
     list.innerHTML = Object.keys(categoryMap).map(cat => {
         const isActive = (activeCategory === cat);
-        const baseClass = "flex justify-between items-center bg-white p-3 rounded-xl shadow-clay mb-2 transition-all cursor-pointer border-l-4";
-        const stateClass = isActive ? "border-blue-500 bg-blue-50/50" : "border-transparent hover:bg-slate-50";
-        const textClass = isActive ? "text-blue-600" : "text-slate-700";
-
-        return `
-            <li class="${baseClass} ${stateClass}" onclick="selectCategoryForTags('${cat}')">
-                <span class="font-bold ${textClass}">${cat}</span>
-                <span class="text-xs text-blue-500 ${isActive ? 'font-bold' : ''}">${isActive ? '管理中' : '管理子種類'}</span>
-            </li>
-        `;
+        return `<li class="flex justify-between items-center bg-white p-3 rounded-xl shadow-clay mb-2 cursor-pointer border-l-4 ${isActive ? 'border-blue-500 bg-blue-50' : 'border-transparent'}" onclick="selectCategoryForTags('${cat}')">
+            <span class="font-bold ${isActive ? 'text-blue-600' : ''}">${cat}</span>
+            <button onclick="removeCategory('${cat}')" class="text-red-300 hover:text-red-500 text-xs px-2">刪除</button>
+        </li>`;
     }).join('');
-
-    if (activeCategory) {
-        renderTagsForActiveCategory();
-    } else {
-        document.getElementById('tagManagerList').innerHTML = '<li class="text-sm text-slate-400 p-2">👈 請先點擊左側主分類</li>';
-    }
+    renderTagsForActiveCategory();
 }
 
-window.selectCategoryForTags = (cat) => {
-    activeCategory = cat;
-    renderSettings();
-};
+window.selectCategoryForTags = (cat) => { activeCategory = cat; renderSettings(); };
 
 function renderTagsForActiveCategory() {
     const list = document.getElementById('tagManagerList');
-    const tags = categoryMap[activeCategory];
-    
-    if (!tags || tags.length === 0) {
-        list.innerHTML = '<li class="text-sm text-slate-400 p-2">此分類尚無種類</li>';
-    } else {
-        list.innerHTML = tags.map(tag => `
-            <li class="flex justify-between p-2 border-b border-slate-50 text-sm items-center">
-                <span>${tag}</span>
-                <button class="text-red-300 hover:text-red-500 font-bold px-2">x</button>
-            </li>
-        `).join('');
-    }
+    if (!activeCategory) return list.innerHTML = '<li class="text-xs text-slate-400 p-2">👈 請先點擊左側主分類</li>';
+    const tags = categoryMap[activeCategory] || [];
+    list.innerHTML = tags.map(tag => `<li class="flex justify-between p-2 border-b border-slate-50 text-sm">
+        <span>${tag}</span><button onclick="removeTag('${tag}')" class="text-red-300 hover:text-red-500">x</button>
+    </li>`).join('');
 }
+
+document.getElementById('btnAddCategory').onclick = () => {
+    const input = document.getElementById('newCategoryInput');
+    const val = input.value.trim();
+    if (val && !categoryMap[val]) { categoryMap[val] = []; renderSettings(); input.value = ''; }
+};
+
+document.getElementById('btnAddTag').onclick = () => {
+    const input = document.getElementById('newTagInput');
+    const val = input.value.trim();
+    if (val && activeCategory && !categoryMap[activeCategory].includes(val)) {
+        categoryMap[activeCategory].push(val); renderSettings(); input.value = '';
+    }
+};
+
+window.removeCategory = (cat) => { if(confirm(`確定刪除 ${cat}？`)) { delete categoryMap[cat]; activeCategory = null; renderSettings(); } };
+window.removeTag = (tag) => { categoryMap[activeCategory] = categoryMap[activeCategory].filter(t => t !== tag); renderSettings(); };
