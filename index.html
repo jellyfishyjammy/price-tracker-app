@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Do記勒 (智慧購物管家)</title>
+    <title>我的省錢比價小幫手</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -15,36 +16,32 @@
     <div id="loginScreen" class="max-w-md mx-auto mt-20 glass-panel rounded-3xl shadow-clay p-8">
         <div id="authSection">
             <div class="text-center mb-6">
-                <h1 class="text-3xl font-bold text-slate-900 mb-2">Do記勒</h1>
+                <h1 class="text-3xl font-bold text-slate-900 mb-2">Price Tracker</h1>
                 <p class="text-slate-500 text-sm">您的雲端比價助手</p>
             </div>
-            <form id="authForm" class="space-y-4">
+            <form id="authForm" class="space-y-4" onsubmit="return false;">
                 <input type="email" id="emailInput" placeholder="電子信箱" class="w-full px-4 py-3 rounded-2xl border-none bg-slate-50 shadow-inner-clay outline-none focus:ring-2 focus:ring-blue-400">
                 <input type="password" id="passwordInput" placeholder="密碼 (至少6碼)" class="w-full px-4 py-3 rounded-2xl border-none bg-slate-50 shadow-inner-clay outline-none focus:ring-2 focus:ring-blue-400">
                 <div class="flex flex-col gap-3 pt-2">
                     <button type="button" id="btnLogin" class="w-full py-3 bg-blue-500 text-white font-bold rounded-2xl shadow-clay hover:bg-blue-600 transition-all">登入</button>
                     <button type="button" id="btnRegister" class="w-full py-3 bg-white text-blue-600 font-bold rounded-2xl shadow-clay hover:bg-slate-50 transition-all">註冊帳號</button>
                 </div>
-                <p class="text-[10px] text-slate-400 text-center mt-4">註冊即代表同意本站隱私權政策，您的購物數據將僅供您個人分析使用。</p>
+                <p class="text-[10px] text-slate-400 text-center mt-4">您的購物數據將僅供您個人分析使用。</p>
             </form>
             <div class="text-center mt-4"><button id="btnShowForgot" class="text-sm text-slate-400 hover:text-blue-500">忘記密碼？</button></div>
         </div>
+
         <div id="forgotSection" class="hidden space-y-4">
             <h2 class="text-xl font-bold text-center">重設密碼</h2>
             <input type="email" id="forgotEmailInput" placeholder="請輸入註冊信箱" class="w-full px-4 py-3 rounded-2xl bg-slate-50 shadow-inner-clay outline-none">
             <button id="btnSendReset" class="w-full py-3 bg-blue-500 text-white font-bold rounded-2xl shadow-clay">發送重設連結</button>
-            <button id="btnBackToLogin" class="w-full text-sm text-slate-400">返回登入</button>
-        </div>
-        <div id="resetPwdSection" class="hidden space-y-4">
-            <h2 class="text-xl font-bold text-center">設定新密碼</h2>
-            <input type="password" id="newPasswordInput" placeholder="請輸入新密碼" class="w-full px-4 py-3 rounded-2xl bg-slate-50 shadow-inner-clay outline-none">
-            <button id="btnUpdatePwd" class="w-full py-3 bg-blue-500 text-white font-bold rounded-2xl shadow-clay">確認修改並登入</button>
+            <button id="btnBackToLogin" class="w-full text-sm text-slate-400 text-center block">返回登入</button>
         </div>
     </div>
 
     <div id="appScreen" class="max-w-5xl mx-auto hidden">
         <header class="flex justify-between items-center mb-8 bg-white/50 p-4 rounded-3xl shadow-clay">
-            <h1 class="text-2xl font-black text-blue-600 tracking-tight">Do記勒</h1>
+            <h1 class="text-2xl font-black text-blue-600 tracking-tight">Price Tracker</h1>
             <button id="btnLogout" class="text-sm font-bold text-red-400 bg-white px-4 py-2 rounded-xl shadow-clay hover:text-red-600 transition-all">登出</button>
         </header>
 
@@ -62,19 +59,19 @@
                     <form id="priceForm" class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">主分類 <span class="text-red-500 text-[10px]">*必填</span></label>
-                                <input type="text" id="itemCategory" list="categoryList" required placeholder="請選擇或輸入" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none focus:ring-2 focus:ring-blue-400">
+                                <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">主分類</label>
+                                <input type="text" id="itemCategory" list="categoryList" required placeholder="請選擇或輸入" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none">
                                 <datalist id="categoryList"></datalist>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">商品種類 <span class="text-red-500 text-[10px]">*必填</span></label>
-                                <input type="text" id="itemTag" list="tagList" required placeholder="請選擇或輸入" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none focus:ring-2 focus:ring-blue-400">
+                                <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">商品種類</label>
+                                <input type="text" id="itemTag" list="tagList" required placeholder="請選擇或輸入" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none">
                                 <datalist id="tagList"></datalist>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">商品名稱 <span class="text-red-500 text-[10px]">*必填</span></label>
+                            <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">商品名稱</label>
                             <input type="text" id="itemName" list="nameList" required placeholder="例如：鮮乳" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none">
                             <datalist id="nameList"></datalist>
                         </div>
@@ -94,11 +91,11 @@
 
                         <div class="grid grid-cols-4 gap-2 bg-blue-50/50 p-3 rounded-2xl">
                             <div class="col-span-1">
-                                <label class="block text-[10px] font-bold text-blue-600 mb-1">規格 <span class="text-red-500">*必填</span></label>
+                                <label class="block text-[10px] font-bold text-blue-600 mb-1">規格</label>
                                 <input type="number" id="itemQty" step="any" required placeholder="數字" class="w-full px-2 py-2 rounded-lg bg-white shadow-clay border-none text-sm outline-none">
                             </div>
                             <div class="col-span-1">
-                                <label class="block text-[10px] font-bold text-blue-600 mb-1">單位 <span class="text-red-500">*必填</span></label>
+                                <label class="block text-[10px] font-bold text-blue-600 mb-1">單位</label>
                                 <select id="itemUnit" class="w-full px-1 py-2 rounded-lg bg-white shadow-clay border-none text-sm outline-none">
                                     <option value="g">g</option><option value="kg">kg</option>
                                     <option value="ml">ml</option><option value="L">L</option>
@@ -106,13 +103,13 @@
                                 </select>
                             </div>
                             <div class="col-span-1">
-                                <label class="block text-[10px] font-bold text-blue-600 mb-1">總價格 <span class="text-red-500">*必填</span></label>
+                                <label class="block text-[10px] font-bold text-blue-600 mb-1">總價格</label>
                                 <input type="number" id="itemPrice" step="any" required placeholder="金額" class="w-full px-2 py-2 rounded-lg bg-white shadow-clay border-none text-sm outline-none">
                             </div>
                             <div class="col-span-1">
                                 <label class="block text-[10px] font-bold text-blue-600 mb-1">幣別</label>
                                 <select id="itemCurrency" class="w-full px-1 py-2 rounded-lg bg-white shadow-clay border-none text-sm outline-none">
-                                    <option value="TWD">TWD(NT$)</option><option value="USD">USD($)</option><option value="JPY">JPY(¥)</option>
+                                    <option value="TWD">TWD</option><option value="USD">USD</option><option value="JPY">JPY</option>
                                 </select>
                             </div>
                         </div>
@@ -123,7 +120,7 @@
                         </div>
 
                         <button type="submit" id="btnAnalyze" class="w-full py-4 bg-blue-500 text-white font-black rounded-2xl shadow-clay hover:bg-blue-600 transition-all flex justify-center items-center gap-2">
-                            <span>分析並比對歷史價格</span>
+                            <span>分析並比對價格</span>
                         </button>
                     </form>
                 </div>
@@ -136,7 +133,7 @@
                 </div>
 
                 <div id="resultsArea" class="hidden space-y-6">
-                    <div id="reportCard" class="glass-panel rounded-3xl shadow-clay p-6 border-l-8 transition-all">
+                    <div id="reportCard" class="glass-panel rounded-3xl shadow-clay p-6 border-l-8 border-blue-400 transition-all">
                         <div class="flex justify-between items-start mb-4">
                             <div>
                                 <h3 id="resNameBrand" class="text-2xl font-black text-slate-800"></h3>
@@ -149,7 +146,7 @@
                         </div>
                         <div id="reportContent" class="text-slate-700 leading-relaxed bg-white/60 p-4 rounded-2xl"></div>
                         <button id="btnSave" class="mt-6 w-full py-3 bg-blue-600 text-white font-bold rounded-2xl shadow-clay hover:bg-blue-700 active:scale-95 transition-all">加入購物紀錄</button>
-                        <button id="btnNew" class="mt-3 w-full py-2 text-slate-500 font-bold hover:text-slate-700">清空重新輸入</button>
+                        <button id="btnNew" class="mt-3 w-full py-2 text-slate-500 font-bold hover:text-slate-700 block mx-auto">清空重新輸入</button>
                     </div>
 
                     <div id="chartContainer" class="glass-panel rounded-3xl shadow-clay p-6 hidden">
@@ -165,7 +162,7 @@
                 <h2 class="text-2xl font-black text-slate-800">📜 歷史消費清單</h2>
                 <div class="flex flex-wrap gap-2">
                     <input type="text" id="historySearch" placeholder="搜尋種類或名稱..." class="px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl text-sm border-none outline-none">
-                    <input type="date" id="historyDateFilter" class="px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl text-sm border-none">
+                    <input type="date" id="historyDateFilter" class="px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl text-sm border-none outline-none">
                     <select id="historySort" class="px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl text-sm border-none outline-none">
                         <option value="dateDesc">日期 (新到舊)</option>
                         <option value="dateAsc">日期 (舊到新)</option>
@@ -196,32 +193,31 @@
             <div class="glass-panel rounded-3xl shadow-clay p-8 relative">
                 <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-orange-400 to-red-400"></div>
                 <h2 class="text-2xl font-black mb-6 text-slate-800">✏️ 編輯紀錄與評價</h2>
-                <div id="editInfoDisplay" class="bg-slate-50 p-4 rounded-2xl mb-6 shadow-inner-clay">
-                </div>
+                <div id="editInfoDisplay" class="bg-slate-50 p-4 rounded-2xl mb-6 shadow-inner-clay"></div>
                 <form id="editForm" class="space-y-6">
                     <div>
                         <label class="block text-sm font-bold text-slate-600 mb-3">這件商品好用嗎？(購買感受)</label>
                         <div class="flex justify-around bg-white p-4 rounded-2xl shadow-clay">
-                            <label class="cursor-pointer group">
+                            <label class="cursor-pointer group text-center">
                                 <input type="radio" name="editRating" value="good" class="hidden">
-                                <div class="text-4xl opacity-30 grayscale group-hover:opacity-100 transition-all">😍</div>
-                                <span class="text-[10px] font-bold text-center block mt-1 text-slate-400">大推</span>
+                                <div class="text-4xl opacity-30 group-hover:opacity-100 transition-all">😍</div>
+                                <span class="text-[10px] font-bold block mt-1 text-slate-400">大推</span>
                             </label>
-                            <label class="cursor-pointer group">
+                            <label class="cursor-pointer group text-center">
                                 <input type="radio" name="editRating" value="ok" class="hidden">
-                                <div class="text-4xl opacity-30 grayscale group-hover:opacity-100 transition-all">😐</div>
-                                <span class="text-[10px] font-bold text-center block mt-1 text-slate-400">普通</span>
+                                <div class="text-4xl opacity-30 group-hover:opacity-100 transition-all">😐</div>
+                                <span class="text-[10px] font-bold block mt-1 text-slate-400">普通</span>
                             </label>
-                            <label class="cursor-pointer group">
+                            <label class="cursor-pointer group text-center">
                                 <input type="radio" name="editRating" value="bad" class="hidden">
-                                <div class="text-4xl opacity-30 grayscale group-hover:opacity-100 transition-all">🤢</div>
-                                <span class="text-[10px] font-bold text-center block mt-1 text-slate-400">雷區</span>
+                                <div class="text-4xl opacity-30 group-hover:opacity-100 transition-all">🤢</div>
+                                <span class="text-[10px] font-bold block mt-1 text-slate-400">雷區</span>
                             </label>
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-bold text-slate-600 mb-2">補充筆記</label>
-                        <textarea id="editNotes" placeholder="寫下你的使用心得或規格重點..." class="w-full px-4 py-3 rounded-2xl bg-slate-50 shadow-inner-clay border-none h-32 outline-none focus:ring-2 focus:ring-orange-300"></textarea>
+                        <textarea id="editNotes" placeholder="寫下你的使用心得..." class="w-full px-4 py-3 rounded-2xl bg-slate-50 shadow-inner-clay border-none h-32 outline-none focus:ring-2 focus:ring-orange-300"></textarea>
                     </div>
                     <div class="flex gap-4">
                         <button type="button" id="btnCancelEditMode" class="flex-1 py-3 font-bold text-slate-400 bg-white rounded-2xl shadow-clay">取消</button>
@@ -237,16 +233,15 @@
                 <div>
                     <h3 class="font-bold text-slate-600 mb-4">主分類管理</h3>
                     <div class="flex gap-2 mb-4">
-                        <input type="text" id="newCategoryInput" placeholder="新分類名稱" class="flex-1 px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl border-none">
+                        <input type="text" id="newCategoryInput" placeholder="新分類名稱" class="flex-1 px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl border-none outline-none">
                         <button id="btnAddCategory" class="px-4 py-2 bg-blue-500 text-white rounded-xl shadow-clay font-bold">+</button>
                     </div>
                     <ul id="categoryManagerList" class="space-y-2"></ul>
                 </div>
                 <div>
                     <h3 class="font-bold text-slate-600 mb-4">種類對應管理</h3>
-                    <p class="text-xs text-slate-400 mb-2">點擊左側分類後，在此新增對應種類</p>
                     <div class="flex gap-2 mb-4">
-                        <input type="text" id="newTagInput" placeholder="新種類名稱" class="flex-1 px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl border-none">
+                        <input type="text" id="newTagInput" placeholder="新種類名稱" class="flex-1 px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl border-none outline-none">
                         <button id="btnAddTag" class="px-4 py-2 bg-green-500 text-white rounded-xl shadow-clay font-bold">+</button>
                     </div>
                     <ul id="tagManagerList" class="space-y-2"></ul>
