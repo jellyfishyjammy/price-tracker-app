@@ -3,6 +3,11 @@ window.onerror = function(msg, url, line) {
     alert("網頁發生錯誤：" + msg + "\n(請檢查網路或 F12 Console)");
 };
 
+// [🚨 終極防呆：環境偵測警告]
+if (window.location.protocol === 'file:') {
+    alert("⚠️ 系統偵測提示：\n您目前是直接點擊檔案 (file://) 開啟網頁。\n\n基於瀏覽器的嚴格安全防護，這種方式會阻擋網頁與資料庫的連線。這就是為什麼您的「登入」、「登出」和「儲存」會完全沒反應或超時卡死！\n\n請將檔案上傳後，改用 GitHub Pages 網址 (https://...) 開啟，所有功能就會瞬間恢復正常囉！");
+}
+
 const SUPABASE_URL = 'https://fugdnxzywuypxfsetsmo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1Z2RueHp5d3V5cHhmc2V0c21vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3MDI1NTMsImV4cCI6MjA4NzI3ODU1M30.L6ON4ZcBM_3eqbQve4S8BJBpyzfAH4KtHw6EfgtCoF8';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -14,7 +19,6 @@ let priceChartInstance = null;
 let editingRecordId = null;
 let activeCategory = null;
 
-// [細緻化的分類與種類清單]
 let categoryMap = {
     "飲品與乳品": ["鮮奶/保久乳", "茶葉/茶包", "沖泡咖啡", "果汁", "碳酸飲料", "瓶裝水"],
     "生鮮與食品": ["生鮮肉品", "海鮮/水產", "蔬菜水果", "冷凍食品", "零食餅乾", "泡麵罐頭", "米油鹽/調味"],
@@ -28,7 +32,6 @@ let categoryMap = {
     "其他": ["五金修繕", "汽機車用品", "雜項"]
 };
 
-// [擴充智慧偵測關鍵字字典]
 const keywordDict = {
     "乳": { cat: "飲品與乳品", tag: "鮮奶/保久乳" }, "奶": { cat: "飲品與乳品", tag: "鮮奶/保久乳" },
     "茶": { cat: "飲品與乳品", tag: "茶葉/茶包" }, "咖啡": { cat: "飲品與乳品", tag: "沖泡咖啡" },
@@ -75,7 +78,6 @@ function getLocalDateString() {
     return `${yyyy}-${mm}-${dd}`;
 }
 
-// --- UI 切換邏輯 ---
 const views = {
     input: document.getElementById('viewInput'),
     history: document.getElementById('viewHistory'),
@@ -110,35 +112,75 @@ tabs.input.addEventListener('click', () => switchView('input'));
 tabs.history.addEventListener('click', () => switchView('history'));
 tabs.settings.addEventListener('click', () => switchView('settings'));
 
-// --- 🎯 補上的登入與註冊邏輯 ---
+// --- [🛡️ 登入功能裝甲升級] ---
 document.getElementById('btnLogin').addEventListener('click', async () => {
     const btn = document.getElementById('btnLogin');
     const email = document.getElementById('emailInput').value.trim();
     const password = document.getElementById('passwordInput').value;
     
     if (!email || !password) return alert("請輸入信箱與密碼！");
+    
+    btn.disabled = true;
     btn.textContent = "登入中...";
     
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) alert("登入失敗：" + error.message);
-    btn.textContent = "登入";
+    try {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+    } catch (err) {
+        console.error("登入錯誤:", err);
+        alert("登入失敗：" + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "登入";
+    }
 });
 
+// --- [🛡️ 註冊功能裝甲升級] ---
 document.getElementById('btnRegister').addEventListener('click', async () => {
     const btn = document.getElementById('btnRegister');
     const email = document.getElementById('emailInput').value.trim();
     const password = document.getElementById('passwordInput').value;
     
     if (!email || password.length < 6) return alert("請輸入有效的信箱與至少6碼密碼！");
+    
+    btn.disabled = true;
     btn.textContent = "註冊中...";
     
-    const { error } = await supabaseClient.auth.signUp({ email, password });
-    if (error) alert("註冊失敗：" + error.message);
-    else alert("🎉 註冊成功！如果沒收到信，請直接按登入試試看。");
-    btn.textContent = "註冊帳號";
+    try {
+        const { error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) throw error;
+        alert("🎉 註冊成功！請直接點擊登入。");
+    } catch (err) {
+        console.error("註冊錯誤:", err);
+        alert("註冊失敗：" + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "註冊帳號";
+    }
 });
 
-// 忘記密碼 UI 切換
+// --- [🛡️ 登出功能裝甲升級] ---
+document.getElementById('btnLogout').addEventListener('click', async () => {
+    const btn = document.getElementById('btnLogout');
+    btn.disabled = true;
+    btn.textContent = "登出中...";
+    
+    try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+    } catch (err) {
+        console.error("登出發生錯誤:", err);
+        alert("與伺服器斷線，已為您強制登出畫面。(" + err.message + ")");
+    } finally {
+        // 無論伺服器有沒有回應，都強制清空本地畫面，絕對不卡死！
+        currentUser = null;
+        document.getElementById('appScreen').classList.add('hidden');
+        document.getElementById('loginScreen').classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = "登出";
+    }
+});
+
 document.getElementById('btnShowForgot').addEventListener('click', () => {
     document.getElementById('authSection').classList.add('hidden');
     document.getElementById('forgotSection').classList.remove('hidden');
@@ -148,7 +190,6 @@ document.getElementById('btnBackToLogin').addEventListener('click', () => {
     document.getElementById('authSection').classList.remove('hidden');
 });
 
-// --- 認證狀態監聽 ---
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
     if (session) { 
         currentUser = session.user; 
@@ -163,7 +204,6 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     }
 });
 
-// --- 分類聯動邏輯 (雙向智慧填寫) ---
 function initCategoryDropdowns() {
     const catList = document.getElementById('categoryList');
     catList.innerHTML = Object.keys(categoryMap).map(c => `<option value="${c}">`).join('');
@@ -221,7 +261,6 @@ document.getElementById('itemName').addEventListener('change', (e) => {
     }
 });
 
-// --- 資料同步 ---
 async function loadCloudHistory() {
     const { data, error } = await supabaseClient.from('purchases').select('*').order('date', { ascending: false });
     if (!error) {
@@ -230,7 +269,6 @@ async function loadCloudHistory() {
     }
 }
 
-// --- 歷史清單 ---
 function renderHistoryTable() {
     const tbody = document.getElementById('historyTableBody');
     const search = document.getElementById('historySearch').value.toLowerCase();
@@ -319,7 +357,6 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
     btn.disabled = false;
 });
 
-// --- 分析與儲存邏輯 ---
 document.getElementById('priceForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const qty = parseFloat(document.getElementById('itemQty').value);
@@ -368,7 +405,6 @@ function renderAnalysisReport(item) {
     }
 }
 
-// Modal 與清空機制實作
 function clearAndResetForm() {
     document.getElementById('priceForm').reset();
     document.getElementById('itemDate').value = getLocalDateString();
@@ -406,7 +442,7 @@ document.getElementById('btnSave').addEventListener('click', async () => {
         }
     } catch (err) {
         console.error("儲存失敗詳細資訊:", err);
-        alert("儲存失敗：" + (err.message || "請檢查您的網路連線或 F12 Console 錯誤。"));
+        alert("儲存失敗：" + (err.message || "請檢查網路連線，或確保不是用 file:/// 開啟檔案。"));
     } finally {
         btn.disabled = false;
         btn.textContent = "加入購物紀錄";
@@ -428,7 +464,6 @@ document.getElementById('btnNew').addEventListener('click', () => {
     clearAndResetForm();
 });
 
-// --- 分類管理實作 ---
 function renderSettings() {
     const list = document.getElementById('categoryManagerList');
     list.innerHTML = Object.keys(categoryMap).map(cat => {
@@ -472,5 +507,3 @@ function renderTagsForActiveCategory() {
         `).join('');
     }
 }
-
-document.getElementById('btnLogout').addEventListener('click', () => supabaseClient.auth.signOut());
