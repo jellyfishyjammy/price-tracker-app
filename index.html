@@ -10,232 +10,163 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gradient-to-br from-slate-100 to-blue-50 min-h-screen text-slate-800 p-4 md:p-8">
+<body class="bg-slate-200 min-h-screen text-slate-800 p-4 md:p-8">
 
-    <div id="loginScreen" class="max-w-md mx-auto mt-20 glass-panel rounded-2xl shadow-xl p-8">
+    <div id="loginScreen" class="max-w-md mx-auto mt-20 glass-panel rounded-3xl shadow-clay p-8">
         <div id="authSection">
             <div class="text-center mb-6">
                 <h1 class="text-3xl font-bold text-slate-900 mb-2">Price Tracker</h1>
-                <p class="text-slate-500">登入或註冊您的專屬雲端比價庫</p>
+                <p class="text-slate-500 text-sm">您的雲端比價助手</p>
             </div>
             <form id="authForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">電子信箱</label>
-                    <input type="email" id="emailInput" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="email" id="emailInput" placeholder="電子信箱" class="w-full px-4 py-3 rounded-2xl border-none bg-slate-50 shadow-inner-clay outline-none focus:ring-2 focus:ring-blue-400">
+                <input type="password" id="passwordInput" placeholder="密碼 (至少6碼)" class="w-full px-4 py-3 rounded-2xl border-none bg-slate-50 shadow-inner-clay outline-none focus:ring-2 focus:ring-blue-400">
+                <div class="flex flex-col gap-3 pt-2">
+                    <button type="button" id="btnLogin" class="w-full py-3 bg-blue-500 text-white font-bold rounded-2xl shadow-clay hover:bg-blue-600 transition-all">登入</button>
+                    <button type="button" id="btnRegister" class="w-full py-3 bg-white text-blue-600 font-bold rounded-2xl shadow-clay hover:bg-slate-50 transition-all">註冊帳號</button>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">密碼 (至少 6 碼)</label>
-                    <input type="password" id="passwordInput" required minlength="6" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div class="text-right mt-1">
-                    <button type="button" id="btnShowForgot" class="text-sm text-blue-600 hover:text-blue-800 transition-colors">忘記密碼？</button>
-                </div>
-                <div class="flex gap-3 pt-2">
-                    <button type="button" id="btnLogin" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-lg transition-colors shadow-sm">登入</button>
-                    <button type="button" id="btnRegister" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-colors shadow-sm">註冊</button>
-                </div>
+                <p class="text-[10px] text-slate-400 text-center mt-4">註冊即代表同意本站隱私權政策，您的購物數據將僅供您個人分析使用。</p>
             </form>
+            <div class="text-center mt-4"><button id="btnShowForgot" class="text-sm text-slate-400 hover:text-blue-500">忘記密碼？</button></div>
         </div>
-
-        <div id="forgotSection" class="hidden">
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-slate-900 mb-2">重設密碼</h2>
-                <p class="text-sm text-slate-500">請輸入註冊信箱，我們將發送重設連結。</p>
-            </div>
-            <form class="space-y-4">
-                <div>
-                    <input type="email" id="forgotEmailInput" required placeholder="您的電子信箱" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div class="flex gap-3 pt-2">
-                    <button type="button" id="btnBackToLogin" class="flex-1 border border-slate-300 text-slate-700 hover:bg-slate-50 py-2.5 rounded-lg transition-colors">返回</button>
-                    <button type="button" id="btnSendReset" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-colors shadow-sm">發送連結</button>
-                </div>
-            </form>
+        <div id="forgotSection" class="hidden space-y-4">
+            <h2 class="text-xl font-bold text-center">重設密碼</h2>
+            <input type="email" id="forgotEmailInput" placeholder="請輸入註冊信箱" class="w-full px-4 py-3 rounded-2xl bg-slate-50 shadow-inner-clay outline-none">
+            <button id="btnSendReset" class="w-full py-3 bg-blue-500 text-white font-bold rounded-2xl shadow-clay">發送重設連結</button>
+            <button id="btnBackToLogin" class="w-full text-sm text-slate-400">返回登入</button>
         </div>
-
-        <div id="updatePwdSection" class="hidden">
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-slate-900 mb-2">設定新密碼</h2>
-                <p class="text-sm text-slate-500">歡迎回來！請輸入您的新密碼。</p>
-            </div>
-            <form class="space-y-4">
-                <div>
-                    <input type="password" id="newPasswordInput" required minlength="6" placeholder="新密碼 (至少 6 碼)" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <button type="button" id="btnUpdatePwd" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg transition-colors shadow-sm">確認修改並登入</button>
-            </form>
+        <div id="resetPwdSection" class="hidden space-y-4">
+            <h2 class="text-xl font-bold text-center">設定新密碼</h2>
+            <input type="password" id="newPasswordInput" placeholder="請輸入新密碼" class="w-full px-4 py-3 rounded-2xl bg-slate-50 shadow-inner-clay outline-none">
+            <button id="btnUpdatePwd" class="w-full py-3 bg-blue-500 text-white font-bold rounded-2xl shadow-clay">確認修改並登入</button>
         </div>
     </div>
 
-    <div id="appScreen" class="max-w-6xl mx-auto hidden">
-        <header class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Price Tracker</h1>
-            </div>
-            <button id="btnLogout" class="text-sm text-slate-500 hover:text-red-500 font-medium transition-colors">登出</button>
+    <div id="appScreen" class="max-w-5xl mx-auto hidden">
+        <header class="flex justify-between items-center mb-8 bg-white/50 p-4 rounded-3xl shadow-clay">
+            <h1 class="text-2xl font-black text-blue-600 tracking-tight">Price Tracker</h1>
+            <button id="btnLogout" class="text-sm font-bold text-red-400 bg-white px-4 py-2 rounded-xl shadow-clay hover:text-red-600 transition-all">登出</button>
         </header>
 
-        <div class="flex space-x-2 mb-6 bg-slate-200/50 p-1 rounded-lg w-max">
-            <button id="tabInput" class="px-6 py-2.5 bg-white text-slate-800 font-semibold rounded-md shadow-sm transition-all text-sm">新增與分析</button>
-            <button id="tabHistory" class="px-6 py-2.5 text-slate-500 hover:text-slate-700 font-medium rounded-md transition-all text-sm">歷史總覽</button>
-        </div>
+        <nav class="flex p-1.5 bg-slate-200/50 rounded-2xl mb-8 shadow-inner-clay w-fit mx-auto">
+            <button id="tabInput" class="px-6 py-2.5 bg-white text-slate-800 font-bold rounded-xl shadow-clay transition-all text-sm">新增與分析</button>
+            <button id="tabHistory" class="px-6 py-2.5 text-slate-500 font-bold rounded-xl transition-all text-sm">歷史清單</button>
+            <button id="tabSettings" class="px-6 py-2.5 text-slate-500 font-bold rounded-xl transition-all text-sm">分類管理</button>
+        </nav>
 
         <div id="viewInput" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div class="lg:col-span-5 glass-panel rounded-2xl shadow-xl p-6 md:p-8 relative overflow-hidden h-max">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-teal-400" id="formTopBar"></div>
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-semibold text-slate-800" id="formTitle">輸入商品資訊</h2>
-                    <button id="btnCancelEdit" class="hidden text-sm text-red-500 hover:text-red-700">取消編輯</button>
+            <div class="lg:col-span-5">
+                <div class="glass-panel rounded-3xl shadow-clay p-6 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1.5 bg-blue-400"></div>
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">🛒 商品資訊</h2>
+                    <form id="priceForm" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">主分類 <span class="text-red-500 text-[10px]">*必填</span></label>
+                                <input type="text" id="itemCategory" list="categoryList" required placeholder="請選擇或輸入" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none focus:ring-2 focus:ring-blue-400">
+                                <datalist id="categoryList"></datalist>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">商品種類 <span class="text-red-500 text-[10px]">*必填</span></label>
+                                <input type="text" id="itemTag" list="tagList" required placeholder="請選擇或輸入" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none focus:ring-2 focus:ring-blue-400">
+                                <datalist id="tagList"></datalist>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">商品名稱 <span class="text-red-500 text-[10px]">*必填</span></label>
+                            <input type="text" id="itemName" list="nameList" required placeholder="例如：鮮乳" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none">
+                            <datalist id="nameList"></datalist>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">品牌</label>
+                                <input type="text" id="itemBrand" list="brandList" placeholder="例如：義美" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none">
+                                <datalist id="brandList"></datalist>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">購買通路</label>
+                                <input type="text" id="itemStore" list="storeList" placeholder="例如：全聯" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none">
+                                <datalist id="storeList"></datalist>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-2 bg-blue-50/50 p-3 rounded-2xl">
+                            <div class="col-span-1">
+                                <label class="block text-[10px] font-bold text-blue-600 mb-1">規格 <span class="text-red-500">*必填</span></label>
+                                <input type="number" id="itemQty" step="any" required placeholder="數字" class="w-full px-2 py-2 rounded-lg bg-white shadow-clay border-none text-sm outline-none">
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-[10px] font-bold text-blue-600 mb-1">單位 <span class="text-red-500">*必填</span></label>
+                                <select id="itemUnit" class="w-full px-1 py-2 rounded-lg bg-white shadow-clay border-none text-sm outline-none">
+                                    <option value="g">g</option><option value="kg">kg</option>
+                                    <option value="ml">ml</option><option value="L">L</option>
+                                    <option value="顆">顆</option><option value="抽">抽</option>
+                                </select>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-[10px] font-bold text-blue-600 mb-1">總價格 <span class="text-red-500">*必填</span></label>
+                                <input type="number" id="itemPrice" step="any" required placeholder="金額" class="w-full px-2 py-2 rounded-lg bg-white shadow-clay border-none text-sm outline-none">
+                            </div>
+                            <div class="col-span-1">
+                                <label class="block text-[10px] font-bold text-blue-600 mb-1">幣別</label>
+                                <select id="itemCurrency" class="w-full px-1 py-2 rounded-lg bg-white shadow-clay border-none text-sm outline-none">
+                                    <option value="TWD">TWD(NT$)</option><option value="USD">USD($)</option><option value="JPY">JPY(¥)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">購買日期</label>
+                            <input type="date" id="itemDate" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 shadow-inner-clay border-none text-sm outline-none">
+                        </div>
+
+                        <button type="submit" id="btnAnalyze" class="w-full py-4 bg-blue-500 text-white font-black rounded-2xl shadow-clay hover:bg-blue-600 transition-all flex justify-center items-center gap-2">
+                            <span>分析並比對歷史價格</span>
+                        </button>
+                    </form>
                 </div>
-                
-                <form id="priceForm" class="space-y-5">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">主分類</label>
-                            <input list="categoryList" id="itemCategory" required placeholder="如：食品、日用..." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                            <datalist id="categoryList"></datalist>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">商品種類</label>
-                            <input list="tagList" id="itemTag" required placeholder="如：牛奶、衛生紙..." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                            <datalist id="tagList"></datalist>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-1">具體商品名稱 (智慧記憶)</label>
-                        <input list="nameList" id="itemName" required placeholder="如：瑞穗全脂鮮乳、舒潔三層..." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-shadow bg-blue-50/30">
-                        <datalist id="nameList"></datalist>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">品牌</label>
-                            <input list="brandList" id="itemBrand" placeholder="如：統一、五月花..." class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                            <datalist id="brandList"></datalist>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">購買途徑</label>
-                            <input list="storeList" id="itemStore" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="如：全聯、好市多...">
-                            <datalist id="storeList"></datalist>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-1">規格 (必填)</label>
-                        <div class="flex gap-2">
-                            <input type="number" id="itemQty" step="0.01" required placeholder="數值" class="w-2/3 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
-                            <select id="itemUnit" class="w-1/3 px-4 py-2.5 rounded-lg border border-slate-300 bg-white outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="g">公克 (g)</option><option value="kg">公斤 (kg)</option>
-                                <option value="ml">毫升 (ml)</option><option value="L">公升 (L)</option>
-                                <option value="pcs">件/抽 (pcs)</option>
-                             </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-1">價格 (必填)</label>
-                        <div class="flex gap-2">
-                            <input type="number" id="itemPrice" step="0.01" required placeholder="總價" class="w-2/3 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
-                            <select id="itemCurrency" class="w-1/3 px-4 py-2.5 rounded-lg border border-slate-300 bg-white outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="TWD">台幣 (TWD)</option><option value="USD">美金 (USD)</option><option value="JPY">日幣 (JPY)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="ratingSection" class="hidden">
-                        <label class="block text-sm font-medium text-slate-600 mb-1">本次購物感受 (回顧評價)</label>
-                        <div class="flex justify-around items-center bg-slate-50 rounded-lg p-2 border border-slate-200">
-                            <label class="cursor-pointer relative">
-                                <input type="radio" name="itemRating" value="good" class="sr-only">
-                                <div class="text-3xl opacity-40 transition-all duration-200 hover:scale-110 grayscale hover:grayscale-0">😍</div>
-                            </label>
-                            <label class="cursor-pointer relative">
-                                <input type="radio" name="itemRating" value="ok" class="sr-only" checked>
-                                <div class="text-3xl opacity-40 transition-all duration-200 hover:scale-110 grayscale hover:grayscale-0">😐</div>
-                            </label>
-                            <label class="cursor-pointer relative">
-                                <input type="radio" name="itemRating" value="bad" class="sr-only">
-                                <div class="text-3xl opacity-40 transition-all duration-200 hover:scale-110 grayscale hover:grayscale-0">🤢</div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-1">備註 (選填)</label>
-                        <input type="text" id="itemNotes" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="例如：買一送一、即期品...">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-1">購買日期</label>
-                        <input type="date" id="itemDate" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
-
-                    <button id="btnAnalyze" type="submit" class="w-full mt-4 bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 px-4 rounded-lg shadow-md transition-colors">
-                        分析並比對歷史價格
-                    </button>
-                </form>
             </div>
 
-            <div class="lg:col-span-7 flex flex-col gap-6">
-                <div id="emptyState" class="glass-panel rounded-2xl p-10 flex flex-col items-center justify-center text-center h-full border-dashed border-2 border-slate-300">
-                    <div class="text-4xl mb-4">🛒</div>
-                    <p class="text-slate-500 text-lg font-medium">您的智能購物管家</p>
-                    <p class="text-slate-400 text-sm mt-2">輸入商品，點擊分析，我會為您評估是否值得購買！</p>
+            <div class="lg:col-span-7 space-y-6">
+                <div id="emptyState" class="h-full flex flex-col items-center justify-center text-slate-500 glass-panel shadow-clay rounded-3xl p-10 transition-all">
+                    <span class="text-6xl mb-4">📊</span>
+                    <p class="font-bold">輸入資訊開始分析</p>
                 </div>
-                
-                <div id="resultsArea" class="hidden flex flex-col gap-6">
-                    <div class="glass-panel rounded-2xl shadow-xl p-6 relative">
-                        <h3 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-2">本次單價分析</h3>
-                        <div class="flex justify-between items-end">
+
+                <div id="resultsArea" class="hidden space-y-6">
+                    <div id="reportCard" class="glass-panel rounded-3xl shadow-clay p-6 border-l-8 transition-all">
+                        <div class="flex justify-between items-start mb-4">
                             <div>
-                                <p id="resNameBrand" class="text-xl font-semibold text-slate-800"></p>
-                                <p id="resBaseName" class="text-xs text-slate-400 mt-1"></p>
+                                <h3 id="resNameBrand" class="text-2xl font-black text-slate-800"></h3>
+                                <p id="resBaseName" class="text-sm text-slate-500 font-medium"></p>
                             </div>
-                            <p id="resUnitPrice" class="text-3xl font-bold text-slate-900 mt-2"></p>
-                        </div>
-                    </div>
-
-                    <div id="chartContainer" class="glass-panel rounded-2xl shadow-xl p-6 hidden">
-                        <h3 class="text-sm font-bold text-slate-600 uppercase tracking-wider mb-4">同種類歷史趨勢</h3>
-                        <div class="w-full h-48">
-                            <canvas id="priceChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="glass-panel rounded-2xl shadow-xl p-6 border-l-4" id="reportCard">
-                        <div id="reportContent" class="space-y-4 text-slate-700 leading-relaxed"></div>
-                        
-                        <div id="extendedReport" class="mt-6 pt-4 border-t border-slate-200 hidden">
-                            <div class="grid grid-cols-2 gap-4 text-sm">
-                                <div class="bg-slate-50 p-3 rounded-lg relative overflow-hidden">
-                                    <div class="absolute right-[-10px] top-[-10px] text-5xl opacity-10">🏆</div>
-                                    <p class="text-slate-500 mb-1 font-medium">歷史最便宜 (同種類)</p>
-                                    <p id="cheapestRecord" class="text-slate-800 mt-1">-</p>
-                                </div>
-                                <div class="bg-slate-50 p-3 rounded-lg relative overflow-hidden">
-                                    <div class="absolute right-[-10px] top-[-10px] text-5xl opacity-10">⏱️</div>
-                                    <p class="text-slate-500 mb-1 font-medium">最近一次購買 (同商品)</p>
-                                    <p id="recentRecord" class="text-slate-800 mt-1">-</p>
-                                </div>
+                            <div class="text-right">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">本次單價</p>
+                                <p id="resUnitPrice" class="text-2xl font-black text-blue-600"></p>
                             </div>
                         </div>
+                        <div id="reportContent" class="text-slate-700 leading-relaxed bg-white/60 p-4 rounded-2xl"></div>
+                        <button id="btnSave" class="mt-6 w-full py-3 bg-blue-600 text-white font-bold rounded-2xl shadow-clay hover:bg-blue-700 active:scale-95 transition-all">加入購物紀錄</button>
+                        <button id="btnNew" class="mt-3 w-full py-2 text-slate-500 font-bold hover:text-slate-700">清空重新輸入</button>
                     </div>
 
-                    <div class="flex gap-4">
-                        <button id="btnSave" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors shadow-md shadow-blue-500/30">加入購物紀錄</button>
-                        <button id="btnNew" class="flex-1 bg-white border border-slate-200 text-slate-700 font-medium py-3 px-4 rounded-lg transition-colors shadow-sm">建立新查詢</button>
+                    <div id="chartContainer" class="glass-panel rounded-3xl shadow-clay p-6 hidden">
+                        <h4 class="font-bold text-slate-700 mb-4 flex items-center gap-2">📉 同種類價格走勢</h4>
+                        <div class="h-[250px]"><canvas id="priceChart"></canvas></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="viewHistory" class="hidden glass-panel rounded-2xl shadow-xl p-6 md:p-8">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <h2 class="text-2xl font-semibold text-slate-800">全部購物紀錄</h2>
-                
-                <div class="flex gap-2 w-full md:w-auto flex-wrap md:flex-nowrap">
-                    <input type="date" id="historyDateFilter" class="px-4 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white" title="依照單日篩選">
-                    <input type="text" id="historySearch" placeholder="搜尋種類、商品名稱或品牌..." class="px-4 py-2 border border-slate-300 rounded-lg text-sm flex-1 md:w-64 outline-none focus:ring-2 focus:ring-blue-500">
-                    <select id="historySort" class="px-4 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+        <div id="viewHistory" class="hidden glass-panel rounded-3xl shadow-clay p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <h2 class="text-2xl font-black text-slate-800">📜 歷史消費清單</h2>
+                <div class="flex flex-wrap gap-2">
+                    <input type="text" id="historySearch" placeholder="搜尋種類或名稱..." class="px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl text-sm border-none outline-none">
+                    <input type="date" id="historyDateFilter" class="px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl text-sm border-none">
+                    <select id="historySort" class="px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl text-sm border-none outline-none">
                         <option value="dateDesc">日期 (新到舊)</option>
                         <option value="dateAsc">日期 (舊到新)</option>
                         <option value="tagAsc">商品種類 (A-Z)</option>
@@ -243,23 +174,96 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto rounded-lg border border-slate-200">
+            <div class="overflow-x-auto rounded-2xl shadow-inner-clay bg-slate-50/50">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-                            <th class="p-3 font-semibold">日期/感受</th>
-                            <th class="p-3 font-semibold">主分類 > 種類 / 名稱 & 品牌</th>
-                            <th class="p-3 font-semibold whitespace-nowrap">購買途徑/備註</th>
-                            <th class="p-3 font-semibold">規格/總價</th>
-                            <th class="p-3 font-semibold">單位價</th>
-                            <th class="p-3 font-semibold text-center">操作</th>
+                        <tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
+                            <th class="p-4">日期/感受</th>
+                            <th class="p-4">分類與名稱</th>
+                            <th class="p-4">通路/備註</th>
+                            <th class="p-4">規格與總價</th>
+                            <th class="p-4">單位價</th>
+                            <th class="p-4 text-center">操作</th>
                         </tr>
                     </thead>
-                    <tbody id="historyTableBody" class="text-sm divide-y divide-slate-100">
-                    </tbody>
+                    <tbody id="historyTableBody" class="text-sm"></tbody>
                 </table>
             </div>
-            <div id="historyEmpty" class="text-center py-10 text-slate-500 hidden">沒有符合的紀錄。</div>
+            <div id="historyEmpty" class="text-center py-20 text-slate-400 font-bold hidden">尚無符合條件的紀錄</div>
+        </div>
+
+        <div id="viewEditRecord" class="hidden max-w-2xl mx-auto">
+            <div class="glass-panel rounded-3xl shadow-clay p-8 relative">
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-orange-400 to-red-400"></div>
+                <h2 class="text-2xl font-black mb-6 text-slate-800">✏️ 編輯紀錄與評價</h2>
+                <div id="editInfoDisplay" class="bg-slate-50 p-4 rounded-2xl mb-6 shadow-inner-clay">
+                </div>
+                <form id="editForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-600 mb-3">這件商品好用嗎？(購買感受)</label>
+                        <div class="flex justify-around bg-white p-4 rounded-2xl shadow-clay">
+                            <label class="cursor-pointer group">
+                                <input type="radio" name="editRating" value="good" class="hidden">
+                                <div class="text-4xl opacity-30 grayscale group-hover:opacity-100 transition-all">😍</div>
+                                <span class="text-[10px] font-bold text-center block mt-1 text-slate-400">大推</span>
+                            </label>
+                            <label class="cursor-pointer group">
+                                <input type="radio" name="editRating" value="ok" class="hidden">
+                                <div class="text-4xl opacity-30 grayscale group-hover:opacity-100 transition-all">😐</div>
+                                <span class="text-[10px] font-bold text-center block mt-1 text-slate-400">普通</span>
+                            </label>
+                            <label class="cursor-pointer group">
+                                <input type="radio" name="editRating" value="bad" class="hidden">
+                                <div class="text-4xl opacity-30 grayscale group-hover:opacity-100 transition-all">🤢</div>
+                                <span class="text-[10px] font-bold text-center block mt-1 text-slate-400">雷區</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-600 mb-2">補充筆記</label>
+                        <textarea id="editNotes" placeholder="寫下你的使用心得或規格重點..." class="w-full px-4 py-3 rounded-2xl bg-slate-50 shadow-inner-clay border-none h-32 outline-none focus:ring-2 focus:ring-orange-300"></textarea>
+                    </div>
+                    <div class="flex gap-4">
+                        <button type="button" id="btnCancelEditMode" class="flex-1 py-3 font-bold text-slate-400 bg-white rounded-2xl shadow-clay">取消</button>
+                        <button type="submit" id="btnUpdateRecord" class="flex-[2] py-3 font-bold text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl shadow-clay">儲存修改內容</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="viewSettings" class="hidden glass-panel rounded-3xl shadow-clay p-6">
+            <h2 class="text-2xl font-black mb-6 text-slate-800">⚙️ 分類與種類管理</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="font-bold text-slate-600 mb-4">主分類管理</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="newCategoryInput" placeholder="新分類名稱" class="flex-1 px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl border-none">
+                        <button id="btnAddCategory" class="px-4 py-2 bg-blue-500 text-white rounded-xl shadow-clay font-bold">+</button>
+                    </div>
+                    <ul id="categoryManagerList" class="space-y-2"></ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-600 mb-4">種類對應管理</h3>
+                    <p class="text-xs text-slate-400 mb-2">點擊左側分類後，在此新增對應種類</p>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="newTagInput" placeholder="新種類名稱" class="flex-1 px-4 py-2 bg-slate-50 shadow-inner-clay rounded-xl border-none">
+                        <button id="btnAddTag" class="px-4 py-2 bg-green-500 text-white rounded-xl shadow-clay font-bold">+</button>
+                    </div>
+                    <ul id="tagManagerList" class="space-y-2"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="successModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-all">
+        <div class="glass-panel bg-white/90 rounded-3xl shadow-clay p-8 max-w-sm w-full mx-4 text-center transform scale-100 transition-transform duration-300 border border-white">
+            <div class="text-6xl mb-4">🎉</div>
+            <h3 class="text-2xl font-black text-slate-800 mb-2">新增成功！</h3>
+            <p class="text-slate-500 text-sm mb-6">您的購物紀錄已妥善保存。</p>
+            <div class="flex flex-col gap-3">
+                <button id="btnModalGoHistory" class="w-full py-3 bg-blue-500 text-white font-bold rounded-2xl shadow-clay hover:bg-blue-600 transition-all">查看歷史清單</button>
+                <button id="btnModalContinue" class="w-full py-3 bg-white text-slate-600 font-bold rounded-2xl shadow-clay hover:bg-slate-50 transition-all">繼續新增 (清空表單)</button>
+            </div>
         </div>
     </div>
 
