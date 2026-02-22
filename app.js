@@ -1,5 +1,4 @@
 // app.js
-
 window.onerror = function(msg, url, line) {
     alert("網頁發生錯誤：" + msg + "\n(請檢查網路或 F12 Console)");
 };
@@ -11,484 +10,446 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 let currentUser = null;
 let userHistory = [];
 let currentAnalyzedItem = null;
-let isRecoveringPassword = false;
 let priceChartInstance = null;
-let editModeId = null;
+let editingRecordId = null;
+let activeCategory = null;
 
-document.getElementById('itemDate').valueAsDate = new Date();
+// [細緻化的分類與種類清單]
+let categoryMap = {
+    "飲品與乳品": ["鮮奶/保久乳", "茶葉/茶包", "沖泡咖啡", "果汁", "碳酸飲料", "瓶裝水"],
+    "生鮮與食品": ["生鮮肉品", "海鮮/水產", "蔬菜水果", "冷凍食品", "零食餅乾", "泡麵罐頭", "米油鹽/調味"],
+    "個人護理": ["洗沐用品", "牙膏/牙刷", "生理用品", "刮鬍用品"],
+    "美妝保養": ["護膚保養", "彩妝/卸妝", "美容工具"],
+    "居家清潔": ["衛生紙/紙巾", "清潔劑/洗衣精", "廚房耗材(保鮮膜/垃圾袋)"],
+    "母嬰用品": ["嬰幼兒尿布", "奶粉/副食品", "哺育/洗沐用品"],
+    "寵物用品": ["寵物飼料", "寵物罐頭/零食", "寵物貓砂/尿布墊"],
+    "文具用品": ["筆/螢光筆", "筆記本/紙張", "辦公小物"],
+    "3C 與家電": ["線材/充電", "電腦周邊", "手機配件", "小家電"],
+    "其他": ["五金修繕", "汽機車用品", "雜項"]
+};
 
-// 介面切換邏輯
-const tabInput = document.getElementById('tabInput');
-const tabHistory = document.getElementById('tabHistory');
-const viewInput = document.getElementById('viewInput');
-const viewHistory = document.getElementById('viewHistory');
+// [擴充智慧偵測關鍵字字典]
+const keywordDict = {
+    "乳": { cat: "飲品與乳品", tag: "鮮奶/保久乳" }, "奶": { cat: "飲品與乳品", tag: "鮮奶/保久乳" },
+    "茶": { cat: "飲品與乳品", tag: "茶葉/茶包" }, "咖啡": { cat: "飲品與乳品", tag: "沖泡咖啡" },
+    "汁": { cat: "飲品與乳品", tag: "果汁" }, "水": { cat: "飲品與乳品", tag: "瓶裝水" },
+    "汽水": { cat: "飲品與乳品", tag: "碳酸飲料" }, "可樂": { cat: "飲品與乳品", tag: "碳酸飲料" },
+    "肉": { cat: "生鮮與食品", tag: "生鮮肉品" }, "魚": { cat: "生鮮與食品", tag: "海鮮/水產" },
+    "蝦": { cat: "生鮮與食品", tag: "海鮮/水產" }, "菜": { cat: "生鮮與食品", tag: "蔬菜水果" },
+    "果": { cat: "生鮮與食品", tag: "蔬菜水果" }, "冰": { cat: "生鮮與食品", tag: "冷凍食品" },
+    "餅乾": { cat: "生鮮與食品", tag: "零食餅乾" }, "麵": { cat: "生鮮與食品", tag: "泡麵罐頭" },
+    "罐": { cat: "生鮮與食品", tag: "泡麵罐頭" }, "鹽": { cat: "生鮮與食品", tag: "米油鹽/調味" },
+    "糖": { cat: "生鮮與食品", tag: "米油鹽/調味" },
+    "沐浴": { cat: "個人護理", tag: "洗沐用品" }, "洗髮": { cat: "個人護理", tag: "洗沐用品" },
+    "牙": { cat: "個人護理", tag: "牙膏/牙刷" }, "衛生棉": { cat: "個人護理", tag: "生理用品" },
+    "刮鬍": { cat: "個人護理", tag: "刮鬍用品" },
+    "乳液": { cat: "美妝保養", tag: "護膚保養" }, "面膜": { cat: "美妝保養", tag: "護膚保養" },
+    "妝": { cat: "美妝保養", tag: "彩妝/卸妝" }, "卸": { cat: "美妝保養", tag: "彩妝/卸妝" },
+    "紙": { cat: "居家清潔", tag: "衛生紙/紙巾" }, "濕巾": { cat: "居家清潔", tag: "衛生紙/紙巾" },
+    "洗": { cat: "居家清潔", tag: "清潔劑/洗衣精" }, "潔": { cat: "居家清潔", tag: "清潔劑/洗衣精" },
+    "柔軟精": { cat: "居家清潔", tag: "清潔劑/洗衣精" }, "垃圾袋": { cat: "居家清潔", tag: "廚房耗材(保鮮膜/垃圾袋)" },
+    "尿布": { cat: "母嬰用品", tag: "嬰幼兒尿布" }, "奶粉": { cat: "母嬰用品", tag: "奶粉/副食品" },
+    "嬰": { cat: "母嬰用品", tag: "哺育/洗沐用品" },
+    "狗": { cat: "寵物用品", tag: "寵物飼料" }, "貓": { cat: "寵物用品", tag: "寵物飼料" },
+    "飼料": { cat: "寵物用品", tag: "寵物飼料" }, "砂": { cat: "寵物用品", tag: "寵物貓砂/尿布墊" },
+    "筆": { cat: "文具用品", tag: "筆/螢光筆" }, "尺": { cat: "文具用品", tag: "辦公小物" },
+    "膠帶": { cat: "文具用品", tag: "辦公小物" },
+    "線": { cat: "3C 與家電", tag: "線材/充電" }, "充": { cat: "3C 與家電", tag: "線材/充電" },
+    "滑鼠": { cat: "3C 與家電", tag: "電腦周邊" }, "鍵盤": { cat: "3C 與家電", tag: "電腦周邊" },
+    "鍋": { cat: "3C 與家電", tag: "小家電" }, "吹風機": { cat: "3C 與家電", tag: "小家電" },
+    "螺絲": { cat: "其他", tag: "五金修繕" }, "機油": { cat: "其他", tag: "汽機車用品" }
+};
 
-tabInput.addEventListener('click', () => {
-    tabInput.className = "px-6 py-2.5 bg-white text-slate-800 font-semibold rounded-md shadow-sm transition-all text-sm";
-    tabHistory.className = "px-6 py-2.5 text-slate-500 hover:text-slate-700 font-medium rounded-md transition-all text-sm";
-    viewInput.classList.remove('hidden');
-    viewHistory.classList.add('hidden');
-});
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag] || tag));
+}
 
-tabHistory.addEventListener('click', () => {
-    tabHistory.className = "px-6 py-2.5 bg-white text-slate-800 font-semibold rounded-md shadow-sm transition-all text-sm";
-    tabInput.className = "px-6 py-2.5 text-slate-500 hover:text-slate-700 font-medium rounded-md transition-all text-sm";
-    viewInput.classList.add('hidden');
-    viewHistory.classList.remove('hidden');
-    renderHistoryTable();
-});
+function getLocalDateString() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+document.getElementById('itemDate').value = getLocalDateString();
 
-// 認證邏輯
-function showAuthSection() { document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('appScreen').classList.add('hidden'); }
-async function showApp() { document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('appScreen').classList.remove('hidden'); await loadCloudHistory(); }
+// --- 視圖切換邏輯 ---
+const views = {
+    input: document.getElementById('viewInput'),
+    history: document.getElementById('viewHistory'),
+    settings: document.getElementById('viewSettings'),
+    edit: document.getElementById('viewEditRecord')
+};
 
+const tabs = {
+    input: document.getElementById('tabInput'),
+    history: document.getElementById('tabHistory'),
+    settings: document.getElementById('tabSettings')
+};
+
+function switchView(viewName) {
+    Object.values(views).forEach(v => v.classList.add('hidden'));
+    views[viewName].classList.remove('hidden');
+
+    Object.keys(tabs).forEach(k => {
+        if (k === viewName) {
+            tabs[k].className = "px-6 py-2.5 bg-white text-slate-800 font-bold rounded-xl shadow-clay transition-all text-sm";
+        } else {
+            tabs[k].className = "px-6 py-2.5 text-slate-500 font-bold rounded-xl transition-all text-sm";
+        }
+    });
+
+    if (viewName === 'input') document.getElementById('itemDate').value = getLocalDateString();
+    if (viewName === 'history') renderHistoryTable();
+    if (viewName === 'settings') renderSettings();
+}
+
+tabs.input.addEventListener('click', () => switchView('input'));
+tabs.history.addEventListener('click', () => switchView('history'));
+tabs.settings.addEventListener('click', () => switchView('settings'));
+
+// --- 認證邏輯 ---
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
-    if (session && !isRecoveringPassword) { currentUser = session.user; showApp(); } 
-    else if (!session) { currentUser = null; showAuthSection(); }
-});
-
-document.getElementById('btnRegister').addEventListener('click', async () => {
-    const email = document.getElementById('emailInput').value.trim();
-    const password = document.getElementById('passwordInput').value;
-    if (!email || !email.includes('@')) { alert("❌ 請輸入正確的電子信箱！"); return; }
-    if (password.length < 6) { alert("❌ 密碼太短，請至少輸入 6 個字元！"); return; }
-    document.getElementById('btnRegister').disabled = true;
-    try {
-        const { error } = await supabaseClient.auth.signUp({ email, password });
-        if (error) alert("註冊失敗：" + error.message); else alert("🎉 註冊成功！系統已為您登入。");
-    } catch (err) {} finally { document.getElementById('btnRegister').disabled = false; }
-});
-
-document.getElementById('btnLogin').addEventListener('click', async () => {
-    const email = document.getElementById('emailInput').value.trim();
-    const password = document.getElementById('passwordInput').value;
-    if (!email || !password) { alert("❌ 請完整輸入信箱與密碼！"); return; }
-    document.getElementById('btnLogin').disabled = true;
-    try {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) alert("登入失敗：" + error.message);
-    } catch (err) {} finally { document.getElementById('btnLogin').disabled = false; }
-});
-
-document.getElementById('btnLogout').addEventListener('click', async () => await supabaseClient.auth.signOut());
-
-document.getElementById('btnShowForgot').addEventListener('click', () => {
-    document.getElementById('authSection').classList.add('hidden');
-    document.getElementById('forgotSection').classList.remove('hidden');
-});
-document.getElementById('btnBackToLogin').addEventListener('click', () => {
-    document.getElementById('forgotSection').classList.add('hidden');
-    document.getElementById('authSection').classList.remove('hidden');
-});
-
-document.getElementById('btnSendReset').addEventListener('click', async () => {
-    const email = document.getElementById('forgotEmailInput').value;
-    if (!email) { alert("❌ 請輸入電子信箱！"); return; }
-    document.getElementById('btnSendReset').textContent = "發送中...";
-    try {
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
-        if (error) alert("發送失敗：" + error.message);
-        else alert("✅ 重設信件已發送！請去信箱點擊連結。");
-    } catch(err) { alert("系統異常：" + err.message); } 
-    finally { document.getElementById('btnSendReset').textContent = "發送連結"; }
-});
-
-document.getElementById('btnUpdatePwd').addEventListener('click', async () => {
-    const newPassword = document.getElementById('newPasswordInput').value;
-    if (newPassword.length < 6) { alert("❌ 密碼至少需要 6 碼！"); return; }
-    document.getElementById('btnUpdatePwd').textContent = "更新中...";
-    try {
-        const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-        if (error) alert("更新失敗：" + error.message);
-        else {
-            alert("✅ 密碼修改成功！正在進入系統...");
-            isRecoveringPassword = false;
-            setTimeout(() => showApp(), 1500);
-        }
-    } catch(err) { alert("系統異常：" + err.message); } 
-    finally { document.getElementById('btnUpdatePwd').textContent = "確認修改並登入"; }
-});
-
-
-// 核心資料與智能帶入
-async function loadCloudHistory() {
-    const { data, error } = await supabaseClient.from('purchases').select('*').order('created_at', { ascending: false });
-    if (!error) { userHistory = data || []; populateDatalists(); }
-}
-
-function populateDatalists() {
-    document.getElementById('nameList').innerHTML = [...new Set(userHistory.map(i => i.name))].map(v => `<option value="${v}">`).join('');
-    document.getElementById('categoryList').innerHTML = [...new Set(userHistory.map(i => i.category).filter(Boolean))].map(v => `<option value="${v}">`).join('');
-    document.getElementById('tagList').innerHTML = [...new Set(userHistory.map(i => i.tag).filter(Boolean))].map(v => `<option value="${v}">`).join('');
-    document.getElementById('brandList').innerHTML = [...new Set(userHistory.map(i => i.brand).filter(Boolean))].map(v => `<option value="${v}">`).join('');
-    document.getElementById('storeList').innerHTML = [...new Set(userHistory.map(i => i.store).filter(Boolean))].map(v => `<option value="${v}">`).join('');
-}
-
-// 智慧帶入功能 (基於「具體商品名稱」自動記憶填寫其他欄位)
-document.getElementById('itemName').addEventListener('change', (e) => {
-    const inputName = e.target.value.trim();
-    if(!inputName) return;
-    const pastItem = userHistory.find(h => h.name === inputName);
-    if(pastItem) {
-        if(!document.getElementById('itemCategory').value) document.getElementById('itemCategory').value = pastItem.category || '';
-        if(!document.getElementById('itemTag').value) document.getElementById('itemTag').value = pastItem.tag || '';
-        if(!document.getElementById('itemBrand').value) document.getElementById('itemBrand').value = pastItem.brand || '';
-        if(!document.getElementById('itemStore').value) document.getElementById('itemStore').value = pastItem.store || '';
-        document.getElementById('itemUnit').value = pastItem.unit || 'g';
+    if (session) { 
+        currentUser = session.user; 
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.remove('hidden');
+        await loadCloudHistory();
+        initCategoryDropdowns();
+    } else {
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('appScreen').classList.add('hidden');
     }
 });
 
-function getStandardizedData(qty, unit, price) {
-    let sQty = parseFloat(qty);
-    let sUnit = unit;
-    if (unit === 'kg') { sQty = sQty * 1000; sUnit = 'g'; }
-    if (unit === 'L') { sQty = sQty * 1000; sUnit = 'ml'; }
-    return { sQty, sUnit, unitPrice: parseFloat((price / sQty).toFixed(4)) };
-}
-
-function getRatingEmoji(val) {
-    if(val === 'good') return '😍';
-    if(val === 'bad') return '🤢';
-    return '😐';
-}
-
-// 表單提交 (分析)
-document.getElementById('priceForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btnAnalyze');
-    btn.innerHTML = "🧠 智能分析中..."; btn.disabled = true;
-
-    setTimeout(() => {
-        const stdData = getStandardizedData(
-            document.getElementById('itemQty').value,
-            document.getElementById('itemUnit').value,
-            document.getElementById('itemPrice').value
-        );
-        
-        // 預設為 ok(😐)，只有在編輯模式下才有機會被使用者修改
-        let selectedRating = 'ok';
-        const ratingNode = document.querySelector('input[name="itemRating"]:checked');
-        if(ratingNode) selectedRating = ratingNode.value;
-
-        currentAnalyzedItem = {
-            user_id: currentUser.id,
-            category: document.getElementById('itemCategory').value.trim(),
-            tag: document.getElementById('itemTag').value.trim(),
-            name: document.getElementById('itemName').value.trim(),
-            brand: document.getElementById('itemBrand').value.trim(),
-            store: document.getElementById('itemStore').value.trim(),
-            qty: parseFloat(document.getElementById('itemQty').value),
-            unit: document.getElementById('itemUnit').value,
-            price: parseFloat(document.getElementById('itemPrice').value),
-            currency: document.getElementById('itemCurrency').value,
-            date: document.getElementById('itemDate').value,
-            rating: selectedRating,
-            notes: document.getElementById('itemNotes').value.trim(),
-            std_qty: stdData.sQty,
-            std_unit: stdData.sUnit,
-            unit_price: stdData.unitPrice
-        };
-
-        if(editModeId) currentAnalyzedItem.id = editModeId;
-
-        generateReport(currentAnalyzedItem);
-        btn.innerHTML = "分析並比對歷史價格"; btn.disabled = false;
-    }, 400); 
-});
-
-// 分析報告生成
-function generateReport(currentItem) {
-    const currentTag = currentItem.tag;
+// --- 分類聯動邏輯 (雙向智慧填寫) ---
+function initCategoryDropdowns() {
+    const catList = document.getElementById('categoryList');
+    catList.innerHTML = Object.keys(categoryMap).map(c => `<option value="${c}">`).join('');
     
-    // 依據「商品種類 (Tag)」做大盤比對
-    const tagHistory = userHistory.filter(h => h.tag === currentTag && h.std_unit === currentItem.std_unit && h.id !== editModeId);
-    tagHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const catInput = document.getElementById('itemCategory');
+    const tagInput = document.getElementById('itemTag');
 
-    // 依據「具體商品 + 品牌」做情感比對
-    const exactHistory = userHistory.filter(h => h.name === currentItem.name && h.brand === currentItem.brand && h.id !== editModeId);
-    exactHistory.sort((a, b) => new Date(b.date) - new Date(a.date)); 
+    // 1. 選主分類 -> 更新子種類清單
+    catInput.addEventListener('change', (e) => {
+        updateTagOptions(e.target.value);
+    });
 
-    document.getElementById('emptyState').classList.add('hidden');
-    document.getElementById('resultsArea').classList.remove('hidden');
-    document.getElementById('resNameBrand').textContent = `${currentItem.brand} ${currentItem.name}`;
-    document.getElementById('resBaseName').textContent = `分類：${currentItem.category} > ${currentItem.tag}`;
-    document.getElementById('resUnitPrice').textContent = `${currentItem.unit_price} ${currentItem.currency}/${currentItem.std_unit}`;
+    // 2. 輸種類 -> 反推主分類
+    tagInput.addEventListener('change', (e) => {
+        const selectedTag = e.target.value.trim();
+        if(!selectedTag) return;
 
-    const reportCard = document.getElementById('reportCard');
-    const reportContent = document.getElementById('reportContent');
-    const extendedReport = document.getElementById('extendedReport');
-    const chartContainer = document.getElementById('chartContainer');
-
-    // 1. 市場比較文案修復 (不再說市場平均，改稱歷史平均)
-    let marketAnalysisHtml = "";
-    let tagAvgPrice = currentItem.unit_price;
-    let isCheaperThanAvg = false;
-
-    if (tagHistory.length > 0) {
-        const prices = tagHistory.map(h => h.unit_price);
-        tagAvgPrice = (prices.reduce((a,b) => a+b, 0) / prices.length).toFixed(4);
-        isCheaperThanAvg = currentItem.unit_price < tagAvgPrice;
-
-        if (isCheaperThanAvg) {
-            marketAnalysisHtml = `<p>💰 價格分析：目前單價 <strong>低於</strong> 您過去購買「${currentTag}」的歷史平均價 (${tagAvgPrice})。</p>`;
-        } else {
-            marketAnalysisHtml = `<p>💰 價格分析：目前單價 <strong>高於</strong> 您過去購買「${currentTag}」的歷史平均價 (${tagAvgPrice})。</p>`;
+        for (const [cat, tags] of Object.entries(categoryMap)) {
+            if (tags.includes(selectedTag)) {
+                if (catInput.value !== cat) {
+                    catInput.value = cat;
+                    updateTagOptions(cat);
+                }
+                break;
+            }
         }
-    } else {
-        marketAnalysisHtml = `<p>💰 價格分析：這是您第一次記錄「${currentTag}」種類的商品。</p>`;
-    }
-
-    // 2. 情感推薦邏輯
-    let recommendationHtml = "";
-    let cardColor = "border-blue-500";
-
-    if (exactHistory.length > 0) {
-        const lastExact = exactHistory[0];
-        const lastRating = lastExact.rating;
-        
-        if(lastRating === 'good') {
-            cardColor = isCheaperThanAvg ? "border-green-500" : "border-blue-500";
-            recommendationHtml = isCheaperThanAvg 
-                ? `<p class="font-bold text-green-700 text-lg mb-2">✅ 極力推薦購買！</p><p>這是您滿意度很高的愛用品，而且現在買很划算！快囤貨！</p>`
-                : `<p class="font-bold text-blue-700 text-lg mb-2">👌 可以考慮購買</p><p>雖然價格偏高，但這是您的愛用品，若有急需仍可入手。</p>`;
-        } else if(lastRating === 'bad') {
-            cardColor = "border-red-500";
-            recommendationHtml = isCheaperThanAvg
-                ? `<p class="font-bold text-red-700 text-lg mb-2">⛔ 警告：請三思！</p><p>雖然現在很便宜，但您上次購買此商品的體驗極差 (🤢)，不建議購買。</p>`
-                : `<p class="font-bold text-red-700 text-lg mb-2">❌ 絕對不要買！</p><p>價格貴，且您上次體驗極差 (🤢)！</p>`;
-        } else {
-            cardColor = isCheaperThanAvg ? "border-green-500" : "border-slate-500";
-            recommendationHtml = `<p class="font-bold text-slate-700 text-lg mb-2">💡 參考建議</p><p>您過去覺得此商品普普通通，可根據當下預算決定。</p>`;
-        }
-        
-        if(lastExact.qty === currentItem.qty) {
-            const diff = currentItem.price - lastExact.price;
-            if(diff > 0) recommendationHtml += `<p class="text-red-600 mt-2 text-sm font-medium">📈 同規格總價比上次貴了 ${diff.toFixed(2)} ${currentItem.currency}</p>`;
-            else if(diff < 0) recommendationHtml += `<p class="text-green-600 mt-2 text-sm font-medium">📉 同規格總價比上次便宜 ${Math.abs(diff).toFixed(2)} ${currentItem.currency}</p>`;
-        }
-
-        document.getElementById('recentRecord').innerHTML = `${lastExact.date} ${getRatingEmoji(lastExact.rating)}<br><span class="text-blue-600 font-bold">${lastExact.unit_price}</span> /${lastExact.std_unit}<br><span class="text-xs text-slate-500 mt-1 block">總價: ${lastExact.price} ${lastExact.currency}<br>${lastExact.store||''}</span>`;
-    } else {
-        cardColor = isCheaperThanAvg ? "border-green-500" : "border-slate-400";
-        recommendationHtml = isCheaperThanAvg
-            ? `<p class="font-bold text-green-700 text-lg mb-2">✅ 推薦嘗鮮</p><p>這款您沒買過，但目前單價低於您購買同種類商品的歷史平均，值得一試！</p>`
-            : `<p class="font-bold text-slate-700 text-lg mb-2">👀 建議觀望</p><p>這是您沒買過的新款，且目前單價高於您過去購買『同種類』商品的歷史平均價。</p>`;
-        document.getElementById('recentRecord').innerHTML = `<span class="text-slate-400">尚無同款商品紀錄</span>`;
-    }
-
-    reportCard.className = `glass-panel rounded-2xl shadow-xl p-6 border-l-4 ${cardColor}`;
-    reportContent.innerHTML = recommendationHtml + `<hr class="my-3 border-slate-200">` + marketAnalysisHtml;
-
-    if(tagHistory.length > 0) {
-        let cheapest = tagHistory[0];
-        tagHistory.forEach(h => { if(h.unit_price < cheapest.unit_price) cheapest = h; });
-        document.getElementById('cheapestRecord').innerHTML = `${cheapest.date}<br><span class="text-green-600 font-bold">${cheapest.unit_price}</span> /${cheapest.std_unit}<br><span class="text-xs text-slate-500 mt-1 block">總價: ${cheapest.price} ${cheapest.currency}<br>${cheapest.name} ${cheapest.brand ? '('+cheapest.brand+')' : ''}</span>`;
-        
-        drawChart(tagHistory, currentItem);
-        extendedReport.classList.remove('hidden');
-        chartContainer.classList.remove('hidden');
-    } else {
-        document.getElementById('cheapestRecord').innerHTML = `<span class="text-slate-400">無歷史比較基準</span>`;
-        extendedReport.classList.remove('hidden');
-        chartContainer.classList.add('hidden');
-    }
-}
-
-function drawChart(historyData, currentItem) {
-    const ctx = document.getElementById('priceChart').getContext('2d');
-    if (priceChartInstance) priceChartInstance.destroy();
-
-    const labels = historyData.map(h => h.date);
-    const dataPoints = historyData.map(h => h.unit_price);
-    labels.push(currentItem.date + ' (本次)');
-    dataPoints.push(currentItem.unit_price);
-
-    priceChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: `單位價 (${currentItem.currency}/${currentItem.std_unit})`,
-                data: dataPoints,
-                borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                borderWidth: 2, fill: true, tension: 0.3,
-                pointBackgroundColor: dataPoints.map((_, i) => i === dataPoints.length - 1 ? '#ef4444' : '#ffffff'),
-                pointBorderColor: dataPoints.map((_, i) => i === dataPoints.length - 1 ? '#ef4444' : '#3b82f6'),
-                pointRadius: dataPoints.map((_, i) => i === dataPoints.length - 1 ? 6 : 4),
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 }
 
-// 儲存邏輯 (更改按鈕文字為 加入購物紀錄)
-document.getElementById('btnSave').addEventListener('click', async function() {
-    if (!currentAnalyzedItem) return;
-    const btn = this; btn.disabled = true; btn.textContent = "上傳中...";
-
-    try {
-        if (editModeId) {
-            const { error } = await supabaseClient.from('purchases').update(currentAnalyzedItem).eq('id', editModeId);
-            if (error) throw error;
-            const index = userHistory.findIndex(h => h.id === editModeId);
-            if(index !== -1) userHistory[index] = currentAnalyzedItem;
-            alert("✅ 紀錄已成功更新！");
-            cancelEditMode();
-        } else {
-            const { data, error } = await supabaseClient.from('purchases').insert([currentAnalyzedItem]).select();
-            if (error) throw error;
-            userHistory.unshift(data[0]);
-        }
-        populateDatalists();
-        btn.classList.replace('bg-blue-600', 'bg-green-600');
-        btn.textContent = "✅ 已加入購物紀錄";
-    } catch(err) { 
-        alert("儲存失敗：" + err.message); 
-        btn.disabled = false;
-        btn.textContent = "加入購物紀錄";
-    } 
-});
-
-document.getElementById('btnNew').addEventListener('click', function() {
-    cancelEditMode();
-    document.getElementById('priceForm').reset();
-    document.getElementById('itemDate').valueAsDate = new Date();
-    currentAnalyzedItem = null;
-    document.getElementById('emptyState').classList.remove('hidden');
-    document.getElementById('resultsArea').classList.add('hidden');
-    document.getElementById('chartContainer').classList.add('hidden');
-    
-    // 重設按鈕狀態
-    const btnSave = document.getElementById('btnSave');
-    btnSave.classList.replace('bg-green-600', 'bg-blue-600');
-    btnSave.textContent = "加入購物紀錄";
-    btnSave.disabled = false;
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-// 渲染表格
-function renderHistoryTable() {
-    const tbody = document.getElementById('historyTableBody');
-    const searchInput = document.getElementById('historySearch').value.toLowerCase();
-    const sortOption = document.getElementById('historySort').value;
-    const dateFilter = document.getElementById('historyDateFilter').value;
-    
-    let filtered = userHistory.filter(h => {
-        const tagStr = (h.tag || "").toLowerCase();
-        const nameStr = (h.name || "").toLowerCase();
-        const brandStr = (h.brand || "").toLowerCase();
-        const matchSearch = tagStr.includes(searchInput) || nameStr.includes(searchInput) || brandStr.includes(searchInput);
-        const matchDate = dateFilter ? h.date === dateFilter : true;
-        return matchSearch && matchDate;
-    });
-
-    filtered.sort((a, b) => {
-        if (sortOption === 'dateDesc') return new Date(b.date) - new Date(a.date);
-        if (sortOption === 'dateAsc') return new Date(a.date) - new Date(b.date);
-        if (sortOption === 'tagAsc') return (a.tag||"").localeCompare((b.tag||""), 'zh-TW');
-        return 0;
-    });
-
-    if (filtered.length === 0) {
-        tbody.innerHTML = '';
-        document.getElementById('historyEmpty').classList.remove('hidden');
+function updateTagOptions(cat) {
+    const tagList = document.getElementById('tagList');
+    if (!cat || !categoryMap[cat]) {
+        tagList.innerHTML = '';
         return;
     }
+    tagList.innerHTML = categoryMap[cat].map(t => `<option value="${t}">`).join('');
+}
 
-    document.getElementById('historyEmpty').classList.add('hidden');
+// 3. 輸名稱 -> 先找歷史紀錄，沒有再找字典
+document.getElementById('itemName').addEventListener('change', (e) => {
+    const name = e.target.value.trim();
+    if(!name) return;
+
+    const past = userHistory.find(h => h.name === name);
+    if (past) {
+        document.getElementById('itemCategory').value = past.category;
+        updateTagOptions(past.category);
+        document.getElementById('itemTag').value = past.tag;
+        document.getElementById('itemBrand').value = past.brand || '';
+        document.getElementById('itemStore').value = past.store || '';
+        document.getElementById('itemUnit').value = past.unit || 'g';
+    } else {
+        for (const key in keywordDict) {
+            if (name.includes(key)) {
+                document.getElementById('itemCategory').value = keywordDict[key].cat;
+                updateTagOptions(keywordDict[key].cat);
+                document.getElementById('itemTag').value = keywordDict[key].tag;
+                break;
+            }
+        }
+    }
+});
+
+// --- 資料同步 ---
+async function loadCloudHistory() {
+    const { data, error } = await supabaseClient.from('purchases').select('*').order('date', { ascending: false });
+    if (!error) {
+        userHistory = data || [];
+        document.getElementById('nameList').innerHTML = [...new Set(userHistory.map(i => i.name))].map(v => `<option value="${escapeHTML(v)}">`).join('');
+    }
+}
+
+// --- 歷史清單 ---
+function renderHistoryTable() {
+    const tbody = document.getElementById('historyTableBody');
+    const search = document.getElementById('historySearch').value.toLowerCase();
+    
+    let filtered = userHistory.filter(h => 
+        (h.name + h.tag + h.brand).toLowerCase().includes(search)
+    );
+
     tbody.innerHTML = filtered.map(item => `
-        <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
-            <td class="p-3">
-                <span class="text-slate-500 whitespace-nowrap block">${item.date}</span>
-                <span class="text-xl mt-1 block" title="滿意度">${getRatingEmoji(item.rating)}</span>
+        <tr class="hover-clay border-b border-slate-100 transition-all">
+            <td class="p-4">
+                <span class="text-slate-400 block text-xs">${item.date}</span>
+                <span class="text-2xl mt-1 block">${getRatingEmoji(item.rating)}</span>
             </td>
-            <td class="p-3">
-                <span class="font-bold text-blue-600 text-xs px-2 py-0.5 bg-blue-50 rounded-full">${item.category||'無分類'} > ${item.tag||'無種類'}</span><br>
-                <span class="font-medium text-slate-800 mt-1 block">${item.name}</span>
-                <span class="text-xs text-slate-400">${item.brand ? '('+item.brand+')' : ''}</span>
+            <td class="p-4">
+                <span class="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">${escapeHTML(item.category)} > ${escapeHTML(item.tag)}</span>
+                <div class="font-bold text-slate-800 mt-1">${escapeHTML(item.name)} <span class="text-slate-400 font-normal text-xs">${escapeHTML(item.brand||'')}</span></div>
             </td>
-            <td class="p-3 text-slate-600">
-                <span class="block text-sm">${item.store || '-'}</span>
-                ${item.notes ? `<span class="text-xs text-slate-400 mt-1 block max-w-[120px] truncate" title="${item.notes}">📝 ${item.notes}</span>` : ''}
+            <td class="p-4 text-xs text-slate-500">
+                ${escapeHTML(item.store || '-')}
+                ${item.notes ? `<div class="text-blue-400 mt-1 truncate w-24">📝 筆記中...</div>` : ''}
             </td>
-            <td class="p-3">
-                <span class="text-slate-500 block text-sm">${item.qty} ${item.unit}</span>
-                <span class="font-semibold text-slate-700 block">${item.price} ${item.currency}</span>
+            <td class="p-4 text-sm">
+                <span class="text-slate-400">${item.qty}${item.unit}</span><br>
+                <span class="font-bold">${item.price} ${item.currency}</span>
             </td>
-            <td class="p-3 text-blue-600 font-medium whitespace-nowrap">${item.unit_price} /${item.std_unit}</td>
-            <td class="p-3 text-center">
-                <div class="flex flex-col gap-2">
-                    <button onclick="editRecord('${item.id}')" class="text-xs bg-slate-100 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded transition-colors">編輯評價</button>
-                    <button onclick="deleteRecord('${item.id}')" class="text-xs bg-slate-100 hover:bg-red-100 text-red-600 px-2 py-1 rounded transition-colors">刪除</button>
-                </div>
+            <td class="p-4 font-black text-blue-600">${item.unit_price}/${item.std_unit}</td>
+            <td class="p-4 text-center">
+                <button onclick="openEditMode('${item.id}')" class="text-xs font-bold text-blue-500 hover:underline">編輯評價</button>
+                <button onclick="deleteRecord('${item.id}')" class="ml-2 text-xs font-bold text-red-300 hover:text-red-500">刪除</button>
             </td>
         </tr>
     `).join('');
+    
+    document.getElementById('historyEmpty').className = filtered.length ? "hidden" : "text-center py-20 text-slate-400 font-bold";
 }
 
-document.getElementById('historySearch').addEventListener('input', renderHistoryTable);
-document.getElementById('historySort').addEventListener('change', renderHistoryTable);
-document.getElementById('historyDateFilter').addEventListener('change', renderHistoryTable);
+function getRatingEmoji(val) { return val === 'good' ? '😍' : (val === 'bad' ? '🤢' : '😐'); }
 
 window.deleteRecord = async (id) => {
-    if(!confirm("確定要刪除這筆紀錄嗎？這無法復原喔！")) return;
-    try {
-        const { error } = await supabaseClient.from('purchases').delete().eq('id', id);
-        if(error) throw error;
+    if (!confirm("確定要刪除這筆紀錄嗎？")) return;
+    const { error } = await supabaseClient.from('purchases').delete().eq('id', id);
+    if (!error) {
         userHistory = userHistory.filter(h => h.id !== id);
         renderHistoryTable();
-        populateDatalists();
-    } catch(err) { alert("刪除失敗：" + err.message); }
+    } else { alert("刪除失敗：" + error.message); }
 };
 
-window.editRecord = (id) => {
+window.openEditMode = (id) => {
     const item = userHistory.find(h => h.id === id);
-    if(!item) return;
+    if (!item) return;
+    
+    editingRecordId = id;
+    switchView('edit');
+    
+    document.getElementById('editInfoDisplay').innerHTML = `
+        <div class="text-sm">
+            <p class="font-bold text-slate-800">${escapeHTML(item.name)}</p>
+            <p class="text-slate-500 text-xs">${item.date} | ${item.price} ${item.currency} (${item.qty}${item.unit})</p>
+        </div>
+    `;
+    
+    document.getElementById('editNotes').value = item.notes || '';
+    const radios = document.getElementsByName('editRating');
+    radios.forEach(r => { if(r.value === (item.rating || 'ok')) r.checked = true; });
+};
 
-    editModeId = id;
+document.getElementById('btnCancelEditMode').addEventListener('click', () => switchView('history'));
+
+document.getElementById('editForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnUpdateRecord');
+    btn.disabled = true;
     
-    document.getElementById('itemCategory').value = item.category || '';
-    document.getElementById('itemTag').value = item.tag || '';
-    document.getElementById('itemName').value = item.name || '';
-    document.getElementById('itemBrand').value = item.brand || '';
-    document.getElementById('itemStore').value = item.store || '';
-    document.getElementById('itemQty').value = item.qty || '';
-    document.getElementById('itemUnit').value = item.unit || 'g';
-    document.getElementById('itemPrice').value = item.price || '';
-    document.getElementById('itemCurrency').value = item.currency || 'TWD';
-    document.getElementById('itemDate').value = item.date || '';
-    document.getElementById('itemNotes').value = item.notes || '';
+    const rating = document.querySelector('input[name="editRating"]:checked').value;
+    const notes = document.getElementById('editNotes').value.trim();
     
-    const ratingRadios = document.getElementsByName('itemRating');
-    for(let r of ratingRadios) {
-        if(r.value === (item.rating || 'ok')) r.checked = true;
+    const { error } = await supabaseClient.from('purchases').update({ rating, notes }).eq('id', editingRecordId);
+    
+    if (!error) {
+        const idx = userHistory.findIndex(h => h.id === editingRecordId);
+        userHistory[idx].rating = rating;
+        userHistory[idx].notes = notes;
+        switchView('history');
+    } else { alert("更新失敗：" + error.message); }
+    btn.disabled = false;
+});
+
+// --- 分析與儲存邏輯 ---
+document.getElementById('priceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const qty = parseFloat(document.getElementById('itemQty').value);
+    const unit = document.getElementById('itemUnit').value;
+    const price = parseFloat(document.getElementById('itemPrice').value);
+    
+    let sQty = qty, sUnit = unit;
+    if (unit === 'kg' || unit === 'L') { sQty *= 1000; sUnit = unit === 'kg' ? 'g' : 'ml'; }
+    const unitPrice = parseFloat((price / sQty).toFixed(4));
+
+    currentAnalyzedItem = {
+        user_id: currentUser.id,
+        category: document.getElementById('itemCategory').value.trim(),
+        tag: document.getElementById('itemTag').value.trim(),
+        name: document.getElementById('itemName').value.trim(),
+        brand: document.getElementById('itemBrand').value.trim(),
+        store: document.getElementById('itemStore').value.trim(),
+        qty, unit, price,
+        currency: document.getElementById('itemCurrency').value,
+        date: document.getElementById('itemDate').value,
+        std_qty: sQty, std_unit: sUnit, unit_price: unitPrice,
+        rating: 'ok', notes: ''
+    };
+
+    renderAnalysisReport(currentAnalyzedItem);
+});
+
+function renderAnalysisReport(item) {
+    document.getElementById('emptyState').classList.add('hidden');
+    document.getElementById('resultsArea').classList.remove('hidden');
+    document.getElementById('resNameBrand').textContent = `${item.brand} ${item.name}`;
+    document.getElementById('resBaseName').textContent = `分類：${item.category} > ${item.tag}`;
+    document.getElementById('resUnitPrice').textContent = `${item.unit_price} ${item.currency}/${item.std_unit}`;
+    
+    const tagHistory = userHistory.filter(h => h.tag === item.tag && h.std_unit === item.std_unit);
+    if (tagHistory.length > 0) {
+        const avg = (tagHistory.reduce((a, b) => a + b.unit_price, 0) / tagHistory.length).toFixed(4);
+        const isCheap = item.unit_price <= avg;
+        document.getElementById('reportContent').innerHTML = `
+            <p class="font-bold ${isCheap ? 'text-green-600' : 'text-orange-500'}">
+                ${isCheap ? '✅ 划算！' : '👀 稍貴'} 比歷史平均 (${avg}) ${isCheap ? '低' : '高'}。
+            </p>
+        `;
+    } else {
+        document.getElementById('reportContent').textContent = "這是此種類的第一筆紀錄，將作為未來比價基準。";
     }
+}
 
-    // 進入編輯模式，解開隱藏的評價區塊
-    document.getElementById('formTitle').textContent = "✏️ 編輯紀錄與評價";
-    document.getElementById('formTopBar').className = "absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-red-400";
-    document.getElementById('btnAnalyze').textContent = "重新分析並準備更新";
-    document.getElementById('btnCancelEdit').classList.remove('hidden');
-    document.getElementById('ratingSection').classList.remove('hidden');
-
+// [Modal 與清空機制實作]
+function clearAndResetForm() {
+    document.getElementById('priceForm').reset();
+    document.getElementById('itemDate').value = getLocalDateString();
     document.getElementById('emptyState').classList.remove('hidden');
     document.getElementById('resultsArea').classList.add('hidden');
     
-    tabInput.click();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-function cancelEditMode() {
-    editModeId = null;
-    document.getElementById('formTitle').textContent = "輸入商品資訊";
-    document.getElementById('formTopBar').className = "absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-teal-400";
-    document.getElementById('btnAnalyze').textContent = "分析並比對歷史價格";
-    document.getElementById('btnCancelEdit').classList.add('hidden');
-    document.getElementById('ratingSection').classList.add('hidden');
+    const btnSave = document.getElementById('btnSave');
+    btnSave.textContent = "加入購物紀錄";
+    btnSave.disabled = false;
 }
 
-document.getElementById('btnCancelEdit').addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('btnNew').click();
+// [優化: 加上嚴謹的錯誤防護 (try...catch...finally)，防止按鈕卡死]
+// [終極優化: 加上 Timeout 超時自爆機制，絕對不讓按鈕無限期卡死]
+document.getElementById('btnSave').addEventListener('click', async () => {
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    btn.textContent = "儲存中...";
+    
+    try {
+        // 建立一個 8 秒的超時炸彈
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("伺服器連線超時 (Timeout 8s)，請求無回應，請重試。")), 8000);
+        });
+
+        // Promise.race 會讓 Supabase 請求跟超時炸彈賽跑，誰先發生就執行誰
+        const { data, error } = await Promise.race([
+            supabaseClient.from('purchases').insert([currentAnalyzedItem]).select(),
+            timeoutPromise
+        ]);
+        
+        if (error) {
+            throw error;
+        }
+
+        if (data && data.length > 0) {
+            userHistory.unshift(data[0]);
+            document.getElementById('nameList').innerHTML = [...new Set(userHistory.map(i => i.name))].map(v => `<option value="${escapeHTML(v)}">`).join('');
+            // 觸發成功 Modal
+            document.getElementById('successModal').classList.remove('hidden');
+        } else {
+            throw new Error("儲存成功，但未收到資料庫回傳的確認資料。");
+        }
+    } catch (err) {
+        console.error("儲存失敗詳細資訊:", err);
+        alert("儲存失敗：" + (err.message || "請檢查您的網路連線或 F12 Console 錯誤。"));
+    } finally {
+        // 無論剛剛成功、失敗、或是被超時炸彈打斷，這行絕對會執行
+        btn.disabled = false;
+        btn.textContent = "加入購物紀錄";
+    }
 });
+
+// Modal 按鈕：查看歷史
+document.getElementById('btnModalGoHistory').addEventListener('click', () => {
+    document.getElementById('successModal').classList.add('hidden');
+    clearAndResetForm();
+    switchView('history');
+});
+
+// Modal 按鈕：繼續新增
+document.getElementById('btnModalContinue').addEventListener('click', () => {
+    document.getElementById('successModal').classList.add('hidden');
+    clearAndResetForm();
+});
+
+// 一般清空表單按鈕
+document.getElementById('btnNew').addEventListener('click', () => {
+    clearAndResetForm();
+});
+
+// --- 分類管理實作 ---
+function renderSettings() {
+    const list = document.getElementById('categoryManagerList');
+    list.innerHTML = Object.keys(categoryMap).map(cat => {
+        const isActive = (activeCategory === cat);
+        const baseClass = "flex justify-between items-center bg-white p-3 rounded-xl shadow-clay mb-2 transition-all cursor-pointer border-l-4";
+        const stateClass = isActive ? "border-blue-500 bg-blue-50/50" : "border-transparent hover:bg-slate-50";
+        const textClass = isActive ? "text-blue-600" : "text-slate-700";
+
+        return `
+            <li class="${baseClass} ${stateClass}" onclick="selectCategoryForTags('${cat}')">
+                <span class="font-bold ${textClass}">${cat}</span>
+                <span class="text-xs text-blue-500 ${isActive ? 'font-bold' : ''}">${isActive ? '管理中' : '管理子種類'}</span>
+            </li>
+        `;
+    }).join('');
+
+    if (activeCategory) {
+        renderTagsForActiveCategory();
+    } else {
+        document.getElementById('tagManagerList').innerHTML = '<li class="text-sm text-slate-400 p-2">👈 請先點擊左側主分類</li>';
+    }
+}
+
+window.selectCategoryForTags = (cat) => {
+    activeCategory = cat;
+    renderSettings();
+};
+
+function renderTagsForActiveCategory() {
+    const list = document.getElementById('tagManagerList');
+    const tags = categoryMap[activeCategory];
+    
+    if (!tags || tags.length === 0) {
+        list.innerHTML = '<li class="text-sm text-slate-400 p-2">此分類尚無種類</li>';
+    } else {
+        list.innerHTML = tags.map(tag => `
+            <li class="flex justify-between p-2 border-b border-slate-50 text-sm items-center">
+                <span>${tag}</span>
+                <button class="text-red-300 hover:text-red-500 font-bold px-2">x</button>
+            </li>
+        `).join('');
+    }
+}
+
+document.getElementById('btnLogout').addEventListener('click', () => supabaseClient.auth.signOut());
